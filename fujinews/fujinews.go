@@ -1,10 +1,12 @@
 // fujinews is a stupid scraper.
 //
-// There is no channel to fetch the latest news from fuji x-series (new cameras
-// or firmware updates). Even though a scraper is not a fantastic idea, it does the job.
-//
-// TODO(ig): Fetch news channel from RSS and push latest news to Twitter maybe?
+// There isn't any **direct** and **no BS** channel to recieve latest firmware
+// update news for Fujifilm X series (and possibly new cameras and lenses) as
+// far as i know.  Even though scraping a site to fill this gap is not a
+// brilliant idea, it does the job for me.
 package main
+
+// TODO(ig): Be a good citizen and extract `news` category from http://feeds.feedburner.com/fujilove
 
 import (
 	"fmt"
