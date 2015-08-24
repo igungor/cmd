@@ -15,7 +15,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-var baseURL = "http://fujilove.com/category/news/"
+const baseURL = "http://fujilove.com/category/news/"
 
 func main() {
 	doc, err := goquery.NewDocument(baseURL)
