@@ -11,14 +11,29 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	rss "github.com/jteeuwen/go-pkg-rss"
 )
 
-const baseURL = "http://fujilove.com/category/news/"
+const (
+	cacheTimeout = 24 * 60
+	webURL       = "http://fujilove.com/category/news/"
+	rssURL       = "http://feeds.feedburner.com/fujilove"
+)
 
-func main() {
-	doc, err := goquery.NewDocument(baseURL)
+var c = http.Client{Timeout: 1 * time.Second}
+
+func scrape() {
+	resp, err := c.Get(webURL)
+	if err != nil {
+		log.Fatal(resp)
+	}
+	defer resp.Body.Close()
+
+	doc, err := goquery.NewDocumentFromResponse(resp)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,4 +46,21 @@ func main() {
 			}
 		}
 	})
+}
+
+func itemHandler(f *rss.Feed, ch *rss.Channel, items []*rss.Item) {
+	for _, item := range items {
+		for _, c := range item.Categories {
+			// Firmware and new lens/camera updates are in `News` category.
+			if c.Text != "News" {
+				continue
+			}
+
+			fmt.Println(item.Title)
+		}
+	}
+}
+
+func main() {
+	scrape()
 }
