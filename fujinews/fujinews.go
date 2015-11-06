@@ -24,20 +24,23 @@ const (
 	rssURL       = "http://feeds.feedburner.com/fujilove"
 )
 
-var c = http.Client{Timeout: 1 * time.Second}
+var c = http.Client{Timeout: 7 * time.Second}
 
 func scrape() {
 	resp, err := c.Get(webURL)
 	if err != nil {
-		log.Fatal(resp)
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Fatal("Can not reach the site")
+	}
 
 	doc, err := goquery.NewDocumentFromResponse(resp)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	doc.Find("#sidebar a").Each(func(i int, s *goquery.Selection) {
 		if val, ok := s.Attr("target"); ok {
 			if val == "_self" {
@@ -62,5 +65,7 @@ func itemHandler(f *rss.Feed, ch *rss.Channel, items []*rss.Item) {
 }
 
 func main() {
+	log.SetFlags(0)
+	log.SetPrefix("fujinews: ")
 	scrape()
 }
