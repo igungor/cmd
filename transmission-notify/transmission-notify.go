@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -20,15 +19,15 @@ var (
 const (
 	// pushbullet
 	PBBaseURL     = "https://api.pushbullet.com/v2"
-	PBAccessToken = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-	PBDeviceID    = ""
+	PBAccessToken = "USE_YOUR_PUSHBULLET_ACCESS_TOKEN"
+	PBDeviceID    = "USE_YOUR_OWN_DEVICE_ID_OR_LEAVE_IT_EMPTY"
 )
 
 func main() {
 	torrent := os.Getenv("TR_TORRENT_NAME")
 	err := push(torrent)
 	if err != nil {
-		log.Printf("Error while pushing a notification: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error while pushing a notification: %v\n", err)
 		return
 	}
 }
@@ -51,7 +50,16 @@ func push(txt string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Failed to push the notification. HTTP Status: %v\n", resp.StatusCode)
+		var errResponse struct {
+			Error struct {
+				Message string `json:"message"`
+			} `json:"error"`
+		}
+		err := json.NewDecoder(resp.Body).Decode(&errResponse)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf(errResponse.Error.Message)
 	}
 	return nil
 }
