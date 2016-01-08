@@ -1,15 +1,15 @@
 package main
 
 // TODO(ig): draw board on the center. positions are hardcoded currently.
+// BUG(ig): drawBoard can't display some letters for some reason. 'NEYCE' appears as 'N YCE'
 
 import (
-	"bufio"
-	"fmt"
 	"log"
-	"os"
 	"strconv"
-	"strings"
+	"time"
+	"unicode/utf8"
 
+	"github.com/igungor/quackle"
 	"github.com/nsf/termbox-go"
 )
 
@@ -33,29 +33,35 @@ func realMain() error {
 
 	initGame()
 
-	drawBoard(110, 25, 15, 15)
+	drawBoard(getCurPos(game).Board(), 110, 25)
 	termbox.Flush()
 mainloop:
 	for {
+		if getCurPos(game).GameOver() {
+			// TODO(ig): control game over
+			time.Sleep(3 * time.Second)
+			break mainloop
+		}
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
 			switch ev.Key {
 			case termbox.KeyEsc, termbox.KeyCtrlC:
 				break mainloop
+			case termbox.KeyEnter:
+				game.HaveComputerPlay()
 			}
 		case termbox.EventError:
 			return ev.Err
 		}
-		drawBoard(110, 25, 15, 15)
+		drawBoard(getCurPos(game).Board(), 110, 25)
 		termbox.Flush()
 	}
 	return nil
 }
 
 // drawBoard draws the board onto (x,y) position of the grid.
-func drawBoard(x, y, w, h int) {
-	sx, sy := termbox.Size()
-	fill(0, 0, sx, sy, ' ')
+func drawBoard(board quackle.Board, x, y int) {
+	w, h := board.Width(), board.Height()
 	// columns on the top
 	for dx := 0; dx < w; dx++ {
 		termbox.SetCell(x+1+dx*2, y-2, rune('A'+dx), fgcolor, bgcolor)
@@ -85,8 +91,37 @@ func drawBoard(x, y, w, h int) {
 	fill(x, y+h, w*2, 1, '─')
 	termbox.SetCell(x+w*2, y+h, '┘', fgcolor, bgcolor)
 
-	// TODO(ig): mark multipliers
-	// TODO(ig): draw letters
+	// mark multipliers and letters
+	for row := 0; row < h; row++ {
+		for col := 0; col < w; col++ {
+			bl := board.Letter(row, col)
+			var r rune
+			if dm.AlphabetParameters().IsPlainLetter(bl) {
+				letter := dm.AlphabetParameters().UserVisible(bl)
+				r, _ = utf8.DecodeRuneInString(letter)
+			} else {
+				letterMult := dm.BoardParameters().LetterMultiplier(row, col)
+				wordMult := dm.BoardParameters().WordMultiplier(row, col)
+				switch {
+				case letterMult == 2:
+					r = '\''
+				case letterMult == 3:
+					r = '"'
+				case letterMult == 4:
+					r = '^'
+				case wordMult == 2:
+					r = '-'
+				case wordMult == 3:
+					r = '='
+				case wordMult == 4:
+					r = '~'
+				default:
+					r = ' '
+				}
+			}
+			termbox.SetCell(x+col*2, y+row, r, fgcolor, bgcolor)
+		}
+	}
 }
 
 // tbprint prints the msg onto (x,y) position of the grid.

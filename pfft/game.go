@@ -13,13 +13,14 @@ const (
 )
 
 var game quackle.Game
+var dm quackle.DataManager
 
 // hacky stuff.
 // var datadir = fmt.Sprintf("%v/src/github.com/igungor/cmd/pfft/data", os.Getenv("GOPATH"))
 
 func initGame() {
 	// set up data manager
-	dm := quackle.NewDataManager()
+	dm = quackle.NewDataManager()
 	dm.SetComputerPlayers(quackle.ComputerPlayerCollectionFullCollection().SwigGetPlayerList())
 	dm.SetBackupLexicon(lexicon)
 	dm.SetAppDataDirectory(datadir)
@@ -51,7 +52,7 @@ func initGame() {
 	dm.SeedRandomNumbers(42)
 
 	// set up players and game
-	game := quackle.NewGame()
+	game = quackle.NewGame()
 	player1, _ := newComputerPlayer(dm, "comp1", 0)
 	player2 := newHumanPlayer(dm, "iby", 1)
 	players := quackle.NewPlayerList()
