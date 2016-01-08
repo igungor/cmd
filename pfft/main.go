@@ -33,12 +33,13 @@ func realMain() error {
 
 	initGame()
 
-	drawBoard(getCurPos(game).Board(), 110, 25)
+	drawBoard(getCurPos(game).Board())
 	termbox.Flush()
+
 mainloop:
 	for {
 		if getCurPos(game).GameOver() {
-			// TODO(ig): control game over
+			// TODO(ig): handle gameover
 			time.Sleep(3 * time.Second)
 			break mainloop
 		}
@@ -50,18 +51,26 @@ mainloop:
 			case termbox.KeyEnter:
 				game.HaveComputerPlay()
 			}
+		case termbox.EventResize:
+			drawBoard(getCurPos(game).Board())
+			termbox.Flush()
 		case termbox.EventError:
 			return ev.Err
 		}
-		drawBoard(getCurPos(game).Board(), 110, 25)
+		drawBoard(getCurPos(game).Board())
 		termbox.Flush()
 	}
 	return nil
 }
 
-// drawBoard draws the board onto (x,y) position of the grid.
-func drawBoard(board quackle.Board, x, y int) {
-	w, h := board.Width(), board.Height()
+// drawBoard draws the board at the center of the grid.
+func drawBoard(board quackle.Board) {
+	sw, sh := termbox.Size()
+	x := (sw - boardsize*2 + 2 + 1 + 1) / 2
+	y := (sh - boardsize + 1 + 1 + 1) / 2
+	w, h := boardsize, boardsize
+
+	termbox.Clear(fgcolor, bgcolor)
 	// columns on the top
 	for dx := 0; dx < w; dx++ {
 		termbox.SetCell(x+1+dx*2, y-2, rune('A'+dx), fgcolor, bgcolor)
