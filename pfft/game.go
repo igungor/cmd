@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/igungor/quackle"
 )
@@ -49,7 +50,7 @@ func initGame() {
 	dm.LexiconParameters().LoadGaddag(gaddag)
 	dm.StrategyParameters().Initialize(lexicon)
 
-	dm.SeedRandomNumbers(42)
+	dm.SeedRandomNumbers(uint(time.Now().UnixNano()))
 
 	// set up players and game
 	game = quackle.NewGame()

@@ -1,6 +1,5 @@
 package main
 
-// TODO(ig): draw board on the center. positions are hardcoded currently.
 // BUG(ig): drawBoard can't display some letters for some reason. 'NEYCE' appears as 'N YCE'
 
 import (
@@ -29,11 +28,12 @@ func realMain() error {
 		return err
 	}
 	defer termbox.Close()
-	termbox.SetInputMode(termbox.InputEsc)
+	termbox.SetInputMode(termbox.InputEsc | termbox.InputMouse)
 
 	initGame()
 
 	drawBoard(getCurPos(game).Board())
+	drawLegend()
 	termbox.Flush()
 
 mainloop:
@@ -53,11 +53,15 @@ mainloop:
 			}
 		case termbox.EventResize:
 			drawBoard(getCurPos(game).Board())
+			drawLegend()
 			termbox.Flush()
+		case termbox.EventMouse:
+			// TODO(ig): handle mouse clicks
 		case termbox.EventError:
 			return ev.Err
 		}
 		drawBoard(getCurPos(game).Board())
+		drawLegend()
 		termbox.Flush()
 	}
 	return nil
@@ -79,7 +83,7 @@ func drawBoard(board quackle.Board) {
 
 	// rows on the left
 	for dy := 0; dy < h; dy++ {
-		if dy < 10 {
+		if dy+1 < 10 {
 			tbprint(strconv.Itoa(dy+1), x-2, y+dy, fgcolor, bgcolor)
 		} else {
 			tbprint(strconv.Itoa(dy+1), x-3, y+dy, fgcolor, bgcolor)
@@ -105,6 +109,8 @@ func drawBoard(board quackle.Board) {
 		for col := 0; col < w; col++ {
 			bl := board.Letter(row, col)
 			var r rune
+			var fg = fgcolor
+			var bg = bgcolor
 			if dm.AlphabetParameters().IsPlainLetter(bl) {
 				letter := dm.AlphabetParameters().UserVisible(bl)
 				r, _ = utf8.DecodeRuneInString(letter)
@@ -114,23 +120,42 @@ func drawBoard(board quackle.Board) {
 				switch {
 				case letterMult == 2:
 					r = '\''
+					fg = termbox.ColorWhite
+					bg = termbox.ColorBlue
 				case letterMult == 3:
 					r = '"'
+					fg = termbox.ColorWhite
+					bg = termbox.ColorMagenta
 				case letterMult == 4:
 					r = '^'
 				case wordMult == 2:
 					r = '-'
+					fg = termbox.ColorWhite
+					bg = termbox.ColorGreen
 				case wordMult == 3:
 					r = '='
+					fg = termbox.ColorWhite
+					bg = termbox.ColorBlack
 				case wordMult == 4:
 					r = '~'
 				default:
 					r = ' '
 				}
 			}
-			termbox.SetCell(x+col*2, y+row, r, fgcolor, bgcolor)
+			termbox.SetCell(x+col*2, y+row, r, fg, bg)
 		}
 	}
+}
+func drawLegend() {
+	sw, sh := termbox.Size()
+	x := sw/2 + boardsize/2 + 2
+	y := ((sh - boardsize + 1 + 1 + 1) / 2) + 15 + 1
+
+	// 4 blocks: H2,H3,K2,K3
+	tbprint("H²", x+0, y, termbox.ColorWhite, termbox.ColorBlue)
+	tbprint("H³", x+2, y, termbox.ColorWhite, termbox.ColorMagenta)
+	tbprint("K²", x+4, y, termbox.ColorWhite, termbox.ColorGreen)
+	tbprint("K³", x+6, y, termbox.ColorWhite, termbox.ColorBlack)
 }
 
 // tbprint prints the msg onto (x,y) position of the grid.
