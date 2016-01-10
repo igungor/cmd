@@ -25,11 +25,12 @@ var dm quackle.DataManager
 var flexAbc quackle.FlexibleAlphabetParameters
 
 type game struct {
-	qg     quackle.Game
-	board  board
-	rack1  rack
-	rack2  rack
-	legend legend
+	qg      quackle.Game
+	board   board
+	rack1   rack
+	rack2   rack
+	legend  legend
+	editbox editbox
 
 	isOver     bool
 	showLegend bool
@@ -61,23 +62,19 @@ func (g *game) draw() {
 	rack1x := sw/2 - g.board.w - 8 - g.rack1.w
 	rack1y := (sh-g.board.w)/2 + 1
 	g.rack1.draw(rack1x, rack1y)
-
-	// responsive design ulan!
-	var yoffset int
-	var xoffset int
-	if sw < g.board.w*2+g.rack1.w+g.rack2.w+18 {
-		xoffset = -60
-		yoffset = 4
-	}
-
-	rack2x := sw/2 + g.board.w + 8 + xoffset
-	rack2y := (sh-g.board.w)/2 + 1 + yoffset
+	rack2x := sw/2 + g.board.w + 8
+	rack2y := (sh-g.board.w)/2 + 1
 	g.rack2.draw(rack2x, rack2y)
 	if g.curPlayer().Id() == 0 {
 		g.rack1.highlight(rack1x, rack1y)
 	} else {
 		g.rack2.highlight(rack2x, rack2y)
 	}
+
+	// editbox
+	boxx := (sw-g.board.w*2+2+1)/2 - g.editbox.w/2
+	boxy := sh/2 + g.board.h
+	g.editbox.draw(boxx, boxy)
 }
 
 func (g *game) loop() {
@@ -98,9 +95,20 @@ mainloop:
 				g.board.showScore = !g.board.showScore
 			case termbox.KeyCtrlL:
 				g.showLegend = !g.showLegend
+			case termbox.KeyArrowLeft:
+				g.editbox.MoveCursorOneRuneBackward()
+			case termbox.KeyArrowRight:
+				g.editbox.MoveCursorOneRuneForward()
+			case termbox.KeyBackspace, termbox.KeyBackspace2:
+				g.editbox.DeleteRuneBackward()
+			case termbox.KeyDelete, termbox.KeyCtrlD:
+				g.editbox.DeleteRuneForward()
 			case termbox.KeyEsc, termbox.KeyCtrlC:
 				break mainloop
 			default:
+				if ev.Ch != 0 {
+					g.editbox.InsertRune(ev.Ch)
+				}
 			}
 		case termbox.EventResize:
 			g.draw()
@@ -201,11 +209,14 @@ func newGame() *game {
 		h:  boardsize,
 	}
 
+	editbox := editbox{}
+
 	return &game{
 		qg:         g,
 		board:      b,
 		rack1:      newRack(player1.Name()),
 		rack2:      newRack(player2.Name()),
+		editbox:    editbox,
 		showLegend: true,
 	}
 }
