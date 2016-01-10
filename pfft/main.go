@@ -5,7 +5,7 @@ package main
 import (
 	"log"
 
-	"github.com/nsf/termbox-go"
+	termbox "github.com/nsf/termbox-go"
 )
 
 func main() {

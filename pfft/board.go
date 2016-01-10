@@ -5,27 +5,22 @@ import (
 	"unicode/utf8"
 
 	"github.com/igungor/quackle"
-	"github.com/nsf/termbox-go"
+	termbox "github.com/nsf/termbox-go"
 )
 
 const boardsize = 15
 
 type board struct {
 	qb        quackle.Board
-	x, y      int
 	w, h      int
 	showScore bool
 }
 
-func (b *board) draw() {
-	sw, sh := termbox.Size()
-	x := (sw - b.w*2 + 2 + 1) / 2
-	y := (sh - b.h + 1 + 1) / 2
-
+func (b *board) draw(x, y int) {
 	// columns on the top
 	for dx := 0; dx < b.w; dx++ {
-		termbox.SetCell(x+1+dx*2, y-2, rune('A'+dx), fgcolor, bgcolor)
-		termbox.SetCell(x+1+dx*2+1, y-2, ' ', fgcolor, bgcolor)
+		termbox.SetCell(x+dx*2, y-2, rune('A'+dx), fgcolor, bgcolor)
+		termbox.SetCell(x+dx*2+1, y-2, ' ', fgcolor, bgcolor)
 	}
 
 	// rows on the left
@@ -37,8 +32,8 @@ func (b *board) draw() {
 		}
 	}
 
-	// draw borders
-	drawRect(x, y, b.w, b.h)
+	// borders
+	drawRect(x, y, b.w*2, b.h)
 
 	// multipliers and letters
 	for row := 0; row < b.h; row++ {
@@ -61,13 +56,29 @@ func (b *board) draw() {
 			wordMult := dm.BoardParameters().WordMultiplier(row, col)
 			switch {
 			case letterMult == 2:
-				tbprint("H²", x+col*2, y+row, termbox.ColorWhite, termbox.ColorBlue)
+				if b.showScore {
+					tbprint("H²", x+col*2, y+row, termbox.ColorWhite, termbox.ColorBlue)
+				} else {
+					tbprint("★", x+col*2, y+row, termbox.ColorBlue, bgcolor)
+				}
 			case letterMult == 3:
-				tbprint("H³", x+col*2, y+row, termbox.ColorWhite, termbox.ColorMagenta)
+				if b.showScore {
+					tbprint("H³", x+col*2, y+row, termbox.ColorWhite, termbox.ColorMagenta)
+				} else {
+					tbprint("★", x+col*2, y+row, termbox.ColorMagenta, bgcolor)
+				}
 			case wordMult == 2:
-				tbprint("K²", x+col*2, y+row, termbox.ColorWhite, termbox.ColorGreen)
+				if b.showScore {
+					tbprint("K²", x+col*2, y+row, termbox.ColorWhite, termbox.ColorGreen)
+				} else {
+					tbprint("★", x+col*2, y+row, termbox.ColorGreen, bgcolor)
+				}
 			case wordMult == 3:
-				tbprint("K³", x+col*2, y+row, termbox.ColorWhite, termbox.ColorBlack)
+				if b.showScore {
+					tbprint("K³", x+col*2, y+row, termbox.ColorWhite, termbox.ColorBlack)
+				} else {
+					tbprint("★", x+col*2, y+row, termbox.ColorBlack, bgcolor)
+				}
 			default:
 				termbox.SetCell(x+col*2, y+row, ' ', fgcolor, bgcolor)
 			}
@@ -76,19 +87,13 @@ func (b *board) draw() {
 }
 
 type legend struct {
-	x, y int
-	w, h int
 }
 
-func (l *legend) draw() {
-	sw, sh := termbox.Size()
-	l.x = sw/2 + boardsize/2 + 1
-	l.y = ((sh - boardsize + 1 + 1 + 1) / 2) + boardsize
-
-	tbprint("H²", l.x+0, l.y, termbox.ColorWhite, termbox.ColorBlue)
-	tbprint("H³", l.x+2, l.y, termbox.ColorWhite, termbox.ColorMagenta)
-	tbprint("K²", l.x+4, l.y, termbox.ColorWhite, termbox.ColorGreen)
-	tbprint("K³", l.x+6, l.y, termbox.ColorWhite, termbox.ColorBlack)
+func (l *legend) draw(x, y int) {
+	tbprint("H²", x+0, y, termbox.ColorWhite, termbox.ColorBlue)
+	tbprint("H³", x+2, y, termbox.ColorWhite, termbox.ColorMagenta)
+	tbprint("K²", x+4, y, termbox.ColorWhite, termbox.ColorGreen)
+	tbprint("K³", x+6, y, termbox.ColorWhite, termbox.ColorBlack)
 }
 
 var score2rune = []rune{' ', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉', '⏨'}
