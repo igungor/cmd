@@ -6,8 +6,6 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-const edit_box_width = 30
-
 func rune_advance_len(r rune, pos int) int {
 	if r == '\t' {
 		return tabstop_length - pos%tabstop_length
@@ -54,21 +52,20 @@ func byte_slice_insert(text []byte, offset int, what []byte) []byte {
 const preferred_horizontal_threshold = 5
 const tabstop_length = 8
 
-type editbox struct {
+type EditBox struct {
 	text           []byte
 	line_voffset   int
 	cursor_boffset int // cursor offset in bytes
 	cursor_voffset int // visual cursor offset in termbox cells
 	cursor_coffset int // cursor offset in unicode code points
-	w, h           int
 }
 
-// Draws the editbox in the given location, 'h' is not used at the moment
-func (eb *editbox) draw(x, y int) {
-	drawRect(x, y, 30, 1)
-	termbox.SetCursor(x+eb.CursorX(), y)
-	eb.AdjustVOffset(eb.w)
-	fill(x, y, eb.w, eb.h, ' ')
+// Draws the EditBox in the given location, 'h' is not used at the moment
+func (eb *EditBox) Draw(x, y, w, h int) {
+	eb.AdjustVOffset(w)
+
+	fill(x, y, w, h, ' ')
+
 	t := eb.text
 	lx := 0
 	tabstop := 0
@@ -82,8 +79,8 @@ func (eb *editbox) draw(x, y int) {
 			tabstop += tabstop_length
 		}
 
-		if rx >= eb.w {
-			termbox.SetCell(x+eb.w-1, y, '→',
+		if rx >= w {
+			termbox.SetCell(x+w-1, y, '→',
 				fgcolor, bgcolor)
 			break
 		}
@@ -92,7 +89,7 @@ func (eb *editbox) draw(x, y int) {
 		if r == '\t' {
 			for ; lx < tabstop; lx++ {
 				rx = lx - eb.line_voffset
-				if rx >= eb.w {
+				if rx >= w {
 					goto next
 				}
 
@@ -116,7 +113,7 @@ func (eb *editbox) draw(x, y int) {
 }
 
 // Adjusts line visual offset to a proper value depending on width
-func (eb *editbox) AdjustVOffset(width int) {
+func (eb *EditBox) AdjustVOffset(width int) {
 	ht := preferred_horizontal_threshold
 	max_h_threshold := (width - 1) / 2
 	if ht > max_h_threshold {
@@ -139,20 +136,20 @@ func (eb *editbox) AdjustVOffset(width int) {
 	}
 }
 
-func (eb *editbox) MoveCursorTo(boffset int) {
+func (eb *EditBox) MoveCursorTo(boffset int) {
 	eb.cursor_boffset = boffset
 	eb.cursor_voffset, eb.cursor_coffset = voffset_coffset(eb.text, boffset)
 }
 
-func (eb *editbox) RuneUnderCursor() (rune, int) {
+func (eb *EditBox) RuneUnderCursor() (rune, int) {
 	return utf8.DecodeRune(eb.text[eb.cursor_boffset:])
 }
 
-func (eb *editbox) RuneBeforeCursor() (rune, int) {
+func (eb *EditBox) RuneBeforeCursor() (rune, int) {
 	return utf8.DecodeLastRune(eb.text[:eb.cursor_boffset])
 }
 
-func (eb *editbox) MoveCursorOneRuneBackward() {
+func (eb *EditBox) MoveCursorOneRuneBackward() {
 	if eb.cursor_boffset == 0 {
 		return
 	}
@@ -160,7 +157,7 @@ func (eb *editbox) MoveCursorOneRuneBackward() {
 	eb.MoveCursorTo(eb.cursor_boffset - size)
 }
 
-func (eb *editbox) MoveCursorOneRuneForward() {
+func (eb *EditBox) MoveCursorOneRuneForward() {
 	if eb.cursor_boffset == len(eb.text) {
 		return
 	}
@@ -168,15 +165,15 @@ func (eb *editbox) MoveCursorOneRuneForward() {
 	eb.MoveCursorTo(eb.cursor_boffset + size)
 }
 
-func (eb *editbox) MoveCursorToBeginningOfTheLine() {
+func (eb *EditBox) MoveCursorToBeginningOfTheLine() {
 	eb.MoveCursorTo(0)
 }
 
-func (eb *editbox) MoveCursorToEndOfTheLine() {
+func (eb *EditBox) MoveCursorToEndOfTheLine() {
 	eb.MoveCursorTo(len(eb.text))
 }
 
-func (eb *editbox) DeleteRuneBackward() {
+func (eb *EditBox) DeleteRuneBackward() {
 	if eb.cursor_boffset == 0 {
 		return
 	}
@@ -186,7 +183,7 @@ func (eb *editbox) DeleteRuneBackward() {
 	eb.text = byte_slice_remove(eb.text, eb.cursor_boffset, eb.cursor_boffset+size)
 }
 
-func (eb *editbox) DeleteRuneForward() {
+func (eb *EditBox) DeleteRuneForward() {
 	if eb.cursor_boffset == len(eb.text) {
 		return
 	}
@@ -194,11 +191,11 @@ func (eb *editbox) DeleteRuneForward() {
 	eb.text = byte_slice_remove(eb.text, eb.cursor_boffset, eb.cursor_boffset+size)
 }
 
-func (eb *editbox) DeleteTheRestOfTheLine() {
+func (eb *EditBox) DeleteTheRestOfTheLine() {
 	eb.text = eb.text[:eb.cursor_boffset]
 }
 
-func (eb *editbox) InsertRune(r rune) {
+func (eb *EditBox) InsertRune(r rune) {
 	var buf [utf8.UTFMax]byte
 	n := utf8.EncodeRune(buf[:], r)
 	eb.text = byte_slice_insert(eb.text, eb.cursor_boffset, buf[:n])
@@ -207,6 +204,25 @@ func (eb *editbox) InsertRune(r rune) {
 
 // Please, keep in mind that cursor depends on the value of line_voffset, which
 // is being set on Draw() call, so.. call this method after Draw() one.
-func (eb *editbox) CursorX() int {
+func (eb *EditBox) CursorX() int {
 	return eb.cursor_voffset - eb.line_voffset
+}
+
+var edit_box EditBox
+
+const edit_box_width = 30
+
+func redraw_all() {
+	w, h := termbox.Size()
+
+	midy := h/2 - 15
+	midx := (w - edit_box_width) / 2
+
+	// unicode box drawing chars around the edit box
+	drawRect(midx, midy, edit_box_width, 1)
+
+	edit_box.Draw(midx, midy, edit_box_width, 1)
+	termbox.SetCursor(midx+edit_box.CursorX(), midy)
+
+	tbprint("Press ESC to quit", midx+6, midy+3, fgcolor, bgcolor)
 }

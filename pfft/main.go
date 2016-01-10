@@ -20,6 +20,7 @@ func realMain() error {
 	termbox.SetInputMode(termbox.InputEsc)
 
 	game := newGame()
+	redraw_all()
 	game.draw()
 	game.loop()
 	return nil
