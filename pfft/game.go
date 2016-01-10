@@ -36,32 +36,42 @@ type game struct {
 }
 
 func (g *game) draw() {
+	// update board and racks
+	g.board.qb = g.pos().Board()
+	g.rack1.update(g.player(0).Rack().ToString())
+	g.rack2.update(g.player(1).Rack().ToString())
+
 	termbox.Clear(fgcolor, bgcolor)
 	defer termbox.Flush()
-
 	sw, sh := termbox.Size()
 
-	// update/draw quackle board
-	g.board.qb = g.pos().Board()
+	// board
 	boardx := (sw - g.board.w*2 + 2 + 1) / 2
 	boardy := (sh - g.board.h + 1 + 1) / 2
 	g.board.draw(boardx, boardy)
 
-	// draw legend
+	// legend
 	if g.showLegend {
 		legendx := (sw+g.board.w)/2 + 1
 		legendy := (sh-g.board.h)/2 + 1 + 1 + g.board.h
 		g.legend.draw(legendx, legendy)
 	}
 
-	// update/rack
-	g.rack1.update(g.player(0).Rack().ToString())
-	g.rack2.update(g.player(1).Rack().ToString())
+	// racks
 	rack1x := sw/2 - g.board.w - 8 - g.rack1.w
 	rack1y := (sh-g.board.w)/2 + 1
 	g.rack1.draw(rack1x, rack1y)
-	rack2x := sw/2 + g.board.w + 8
-	rack2y := (sh-g.board.w)/2 + 1
+
+	// responsive design ulan!
+	var yoffset int
+	var xoffset int
+	if sw < g.board.w*2+g.rack1.w+g.rack2.w+18 {
+		xoffset = -60
+		yoffset = 4
+	}
+
+	rack2x := sw/2 + g.board.w + 8 + xoffset
+	rack2y := (sh-g.board.w)/2 + 1 + yoffset
 	g.rack2.draw(rack2x, rack2y)
 	if g.curPlayer().Id() == 0 {
 		g.rack1.highlight(rack1x, rack1y)
