@@ -17,6 +17,8 @@ const (
 	bgcolor = termbox.ColorDefault
 )
 
+var showScore bool
+
 func main() {
 	if err := realMain(); err != nil {
 		log.Fatal(err)
@@ -50,6 +52,9 @@ mainloop:
 				break mainloop
 			case termbox.KeyEnter:
 				game.HaveComputerPlay()
+			case termbox.KeyCtrlS:
+				showScore = !showScore
+			default:
 			}
 		case termbox.EventResize:
 			drawBoard(getCurPos(game).Board())
@@ -104,54 +109,83 @@ func drawBoard(board quackle.Board) {
 	fill(x, y+h, w*2, 1, '─')
 	termbox.SetCell(x+w*2, y+h, '┘', fgcolor, bgcolor)
 
-	// mark multipliers and letters
+	// multipliers and letters
 	for row := 0; row < h; row++ {
 		for col := 0; col < w; col++ {
+			// mark letters
 			bl := board.Letter(row, col)
-			var r rune
-			var fg = fgcolor
-			var bg = bgcolor
 			if dm.AlphabetParameters().IsPlainLetter(bl) {
 				letter := dm.AlphabetParameters().UserVisible(bl)
-				r, _ = utf8.DecodeRuneInString(letter)
-			} else {
-				letterMult := dm.BoardParameters().LetterMultiplier(row, col)
-				wordMult := dm.BoardParameters().WordMultiplier(row, col)
-				switch {
-				case letterMult == 2:
-					r = '\''
-					fg = termbox.ColorWhite
-					bg = termbox.ColorBlue
-				case letterMult == 3:
-					r = '"'
-					fg = termbox.ColorWhite
-					bg = termbox.ColorMagenta
-				case letterMult == 4:
-					r = '^'
-				case wordMult == 2:
-					r = '-'
-					fg = termbox.ColorWhite
-					bg = termbox.ColorGreen
-				case wordMult == 3:
-					r = '='
-					fg = termbox.ColorWhite
-					bg = termbox.ColorBlack
-				case wordMult == 4:
-					r = '~'
-				default:
-					r = ' '
+				score := dm.AlphabetParameters().Score(bl)
+				r, _ := utf8.DecodeRuneInString(letter)
+				termbox.SetCell(x+col*2, y+row, r, fgcolor, bgcolor)
+				// letter scores
+				if showScore {
+					termbox.SetCell(x+col*2+1, y+row, getLetterScoreSubscript(score), fgcolor, bgcolor)
 				}
+				continue
 			}
-			termbox.SetCell(x+col*2, y+row, r, fg, bg)
+
+			// mark multipliers
+			letterMult := dm.BoardParameters().LetterMultiplier(row, col)
+			wordMult := dm.BoardParameters().WordMultiplier(row, col)
+			switch {
+			case letterMult == 2:
+				// termbox.SetCell(x+col*2, y+row, '\'', termbox.ColorWhite, termbox.ColorBlue)
+				tbprint("H²", x+col*2, y+row, termbox.ColorWhite, termbox.ColorBlue)
+			case letterMult == 3:
+				// termbox.SetCell(x+col*2, y+row, '"', termbox.ColorWhite, termbox.ColorMagenta)
+				tbprint("H³", x+col*2, y+row, termbox.ColorWhite, termbox.ColorMagenta)
+			case letterMult == 4: // unused for kelimelik
+				// r = '^'
+			case wordMult == 2:
+				// termbox.SetCell(x+col*2, y+row, '-', termbox.ColorWhite, termbox.ColorGreen)
+				tbprint("K²", x+col*2, y+row, termbox.ColorWhite, termbox.ColorGreen)
+			case wordMult == 3:
+				// termbox.SetCell(x+col*2, y+row, '=', termbox.ColorWhite, termbox.ColorBlack)
+				tbprint("K³", x+col*2, y+row, termbox.ColorWhite, termbox.ColorBlack)
+			case wordMult == 4: // unused for kelimelik
+				// r = '~'
+			default:
+				termbox.SetCell(x+col*2, y+row, ' ', fgcolor, bgcolor)
+			}
 		}
 	}
 }
+
+func getLetterScoreSubscript(score int) (r rune) {
+	switch score {
+	case 0:
+		r = '₀'
+	case 1:
+		r = '₁'
+	case 2:
+		r = '₂'
+	case 3:
+		r = '₃'
+	case 4:
+		r = '₄'
+	case 5:
+		r = '₅'
+	case 6:
+		r = '₆'
+	case 7:
+		r = '₇'
+	case 8:
+		r = '₈'
+	case 9:
+		r = '₉'
+	case 10:
+		r = '⏨'
+	}
+	return r
+}
+
 func drawLegend() {
 	sw, sh := termbox.Size()
 	x := sw/2 + boardsize/2 + 2
 	y := ((sh - boardsize + 1 + 1 + 1) / 2) + 15 + 1
 
-	// 4 blocks: H2,H3,K2,K3
 	tbprint("H²", x+0, y, termbox.ColorWhite, termbox.ColorBlue)
 	tbprint("H³", x+2, y, termbox.ColorWhite, termbox.ColorMagenta)
 	tbprint("K²", x+4, y, termbox.ColorWhite, termbox.ColorGreen)
