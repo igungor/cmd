@@ -22,6 +22,7 @@ const (
 )
 
 var dm quackle.DataManager
+var flexAbc quackle.FlexibleAlphabetParameters
 
 type game struct {
 	qg     quackle.Game
@@ -35,38 +36,38 @@ type game struct {
 }
 
 func (g *game) draw() {
-	// update quackle board
-	g.board.qb = g.pos().Board()
-	// update racks
-	g.rack1.update(g.player(0).Rack().ToString())
-	g.rack2.update(g.player(1).Rack().ToString())
-
 	termbox.Clear(fgcolor, bgcolor)
+	defer termbox.Flush()
 
 	sw, sh := termbox.Size()
+
+	// update/draw quackle board
+	g.board.qb = g.pos().Board()
 	boardx := (sw - g.board.w*2 + 2 + 1) / 2
 	boardy := (sh - g.board.h + 1 + 1) / 2
 	g.board.draw(boardx, boardy)
 
-	legendx := (sw+g.board.w)/2 + 1
-	legendy := (sh-g.board.h)/2 + 1 + 1 + g.board.h
-	g.legend.draw(legendx, legendy)
+	// draw legend
+	if g.showLegend {
+		legendx := (sw+g.board.w)/2 + 1
+		legendy := (sh-g.board.h)/2 + 1 + 1 + g.board.h
+		g.legend.draw(legendx, legendy)
+	}
 
+	// update/rack
+	g.rack1.update(g.player(0).Rack().ToString())
+	g.rack2.update(g.player(1).Rack().ToString())
 	rack1x := sw/2 - g.board.w - 8 - g.rack1.w
 	rack1y := (sh-g.board.w)/2 + 1
 	g.rack1.draw(rack1x, rack1y)
-
 	rack2x := sw/2 + g.board.w + 8
 	rack2y := (sh-g.board.w)/2 + 1
 	g.rack2.draw(rack2x, rack2y)
-
 	if g.curPlayer().Id() == 0 {
 		g.rack1.highlight(rack1x, rack1y)
 	} else {
 		g.rack2.highlight(rack2x, rack2y)
 	}
-
-	termbox.Flush()
 }
 
 func (g *game) loop() {
@@ -85,6 +86,8 @@ mainloop:
 				g.qg.HaveComputerPlay()
 			case termbox.KeyCtrlS:
 				g.board.showScore = !g.board.showScore
+			case termbox.KeyCtrlL:
+				g.showLegend = !g.showLegend
 			case termbox.KeyEsc, termbox.KeyCtrlC:
 				break mainloop
 			default:
@@ -134,7 +137,7 @@ func newGame() *game {
 	// set up alphabet
 	abc := quackle.AlphabetParametersFindAlphabetFile(alphabet)
 	qabc := quackle.UtilStdStringToQString(abc)
-	flexAbc := quackle.NewFlexibleAlphabetParameters()
+	flexAbc = quackle.NewFlexibleAlphabetParameters()
 	flexAbc.Load(qabc)
 	dm.SetAlphabetParameters(flexAbc)
 
@@ -155,7 +158,8 @@ func newGame() *game {
 	dm.LexiconParameters().LoadGaddag(gaddag)
 	dm.StrategyParameters().Initialize(lexicon)
 
-	dm.SeedRandomNumbers(uint(time.Now().UnixNano()))
+	// dm.SeedRandomNumbers(uint(time.Now().UnixNano()))
+	dm.SeedRandomNumbers(42)
 
 	newCompPlayer := func(name string, id int) quackle.Player {
 		found := make([]bool, 1)

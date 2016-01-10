@@ -2,6 +2,7 @@ package main
 
 import (
 	"strconv"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/igungor/quackle"
@@ -40,10 +41,16 @@ func (b *board) draw(x, y int) {
 		for col := 0; col < b.w; col++ {
 			// mark letters
 			bl := b.qb.Letter(row, col)
-			if dm.AlphabetParameters().IsPlainLetter(bl) {
-				letter := dm.AlphabetParameters().UserVisible(bl)
-				score := dm.AlphabetParameters().Score(bl)
+			if bl != byte(quackle.QUACKLE_NULL_MARK) {
+				letter := flexAbc.UserVisible(bl)
+
 				r, _ := utf8.DecodeRuneInString(letter)
+				// BUG(ig): score lookups for joker letters are broken and crashes the app.
+				// FIXME(ig): fix this ugly hack!
+				var score int
+				if unicode.IsUpper(r) {
+					score = flexAbc.Score(bl)
+				}
 				termbox.SetCell(x+col*2, y+row, r, fgcolor, bgcolor)
 				if b.showScore {
 					termbox.SetCell(x+col*2+1, y+row, getScoreRune(score), fgcolor, bgcolor)
@@ -54,33 +61,35 @@ func (b *board) draw(x, y int) {
 			// mark multipliers
 			letterMult := dm.BoardParameters().LetterMultiplier(row, col)
 			wordMult := dm.BoardParameters().WordMultiplier(row, col)
+			multChar := "★"
+			var ch string
+			var altch string
+			color := fgcolor
 			switch {
 			case letterMult == 2:
-				if b.showScore {
-					tbprint("H²", x+col*2, y+row, termbox.ColorWhite, termbox.ColorBlue)
-				} else {
-					tbprint("★", x+col*2, y+row, termbox.ColorBlue, bgcolor)
-				}
+				color = termbox.ColorBlue
+				altch = "h²"
+				ch = multChar
 			case letterMult == 3:
-				if b.showScore {
-					tbprint("H³", x+col*2, y+row, termbox.ColorWhite, termbox.ColorMagenta)
-				} else {
-					tbprint("★", x+col*2, y+row, termbox.ColorMagenta, bgcolor)
-				}
+				color = termbox.ColorMagenta
+				altch = "h³"
+				ch = multChar
 			case wordMult == 2:
-				if b.showScore {
-					tbprint("K²", x+col*2, y+row, termbox.ColorWhite, termbox.ColorGreen)
-				} else {
-					tbprint("★", x+col*2, y+row, termbox.ColorGreen, bgcolor)
-				}
+				color = termbox.ColorGreen
+				altch = "k²"
+				ch = multChar
 			case wordMult == 3:
-				if b.showScore {
-					tbprint("K³", x+col*2, y+row, termbox.ColorWhite, termbox.ColorBlack)
-				} else {
-					tbprint("★", x+col*2, y+row, termbox.ColorBlack, bgcolor)
-				}
+				color = termbox.ColorBlack
+				altch = "k³"
+				ch = multChar
 			default:
-				termbox.SetCell(x+col*2, y+row, ' ', fgcolor, bgcolor)
+				ch = " "
+				altch = " "
+			}
+			if b.showScore {
+				tbprint(altch, x+col*2, y+row, color, bgcolor)
+			} else {
+				tbprint(ch, x+col*2, y+row, color, bgcolor)
 			}
 		}
 	}
@@ -96,7 +105,7 @@ func (l *legend) draw(x, y int) {
 	tbprint("K³", x+6, y, termbox.ColorWhite, termbox.ColorBlack)
 }
 
-var score2rune = []rune{' ', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉', '⏨'}
+var score2rune = []rune{'₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉', '⏨'}
 
 func getScoreRune(score int) (r rune) {
 	return score2rune[score]
