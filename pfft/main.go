@@ -41,8 +41,7 @@ func realMain() error {
 mainloop:
 	for {
 		if getCurPos(game).GameOver() {
-			// TODO(ig): handle gameover
-			time.Sleep(3 * time.Second)
+			drawGameover()
 			break mainloop
 		}
 		switch ev := termbox.PollEvent(); ev.Type {
@@ -80,6 +79,7 @@ func drawBoard(board quackle.Board) {
 	w, h := boardsize, boardsize
 
 	termbox.Clear(fgcolor, bgcolor)
+
 	// columns on the top
 	for dx := 0; dx < w; dx++ {
 		termbox.SetCell(x+1+dx*2, y-2, rune('A'+dx), fgcolor, bgcolor)
@@ -95,19 +95,8 @@ func drawBoard(board quackle.Board) {
 		}
 	}
 
-	// top border
-	termbox.SetCell(x-1, y-1, '┌', fgcolor, bgcolor)
-	fill(x, y-1, w*2, 1, '─')
-	termbox.SetCell(x+w*2, y-1, '┐', fgcolor, bgcolor)
-
-	// body border
-	fill(x-1, y, 1, h, '│')
-	fill(x+w*2, y, 1, h, '│')
-
-	// bottom border
-	termbox.SetCell(x-1, y+h, '└', fgcolor, bgcolor)
-	fill(x, y+h, w*2, 1, '─')
-	termbox.SetCell(x+w*2, y+h, '┘', fgcolor, bgcolor)
+	// draw borders
+	drawRect(x, y, w, h)
 
 	// multipliers and letters
 	for row := 0; row < h; row++ {
@@ -119,9 +108,8 @@ func drawBoard(board quackle.Board) {
 				score := dm.AlphabetParameters().Score(bl)
 				r, _ := utf8.DecodeRuneInString(letter)
 				termbox.SetCell(x+col*2, y+row, r, fgcolor, bgcolor)
-				// letter scores
 				if showScore {
-					termbox.SetCell(x+col*2+1, y+row, getLetterScoreSubscript(score), fgcolor, bgcolor)
+					termbox.SetCell(x+col*2+1, y+row, getScoreRune(score), fgcolor, bgcolor)
 				}
 				continue
 			}
@@ -131,54 +119,18 @@ func drawBoard(board quackle.Board) {
 			wordMult := dm.BoardParameters().WordMultiplier(row, col)
 			switch {
 			case letterMult == 2:
-				// termbox.SetCell(x+col*2, y+row, '\'', termbox.ColorWhite, termbox.ColorBlue)
 				tbprint("H²", x+col*2, y+row, termbox.ColorWhite, termbox.ColorBlue)
 			case letterMult == 3:
-				// termbox.SetCell(x+col*2, y+row, '"', termbox.ColorWhite, termbox.ColorMagenta)
 				tbprint("H³", x+col*2, y+row, termbox.ColorWhite, termbox.ColorMagenta)
-			case letterMult == 4: // unused for kelimelik
-				// r = '^'
 			case wordMult == 2:
-				// termbox.SetCell(x+col*2, y+row, '-', termbox.ColorWhite, termbox.ColorGreen)
 				tbprint("K²", x+col*2, y+row, termbox.ColorWhite, termbox.ColorGreen)
 			case wordMult == 3:
-				// termbox.SetCell(x+col*2, y+row, '=', termbox.ColorWhite, termbox.ColorBlack)
 				tbprint("K³", x+col*2, y+row, termbox.ColorWhite, termbox.ColorBlack)
-			case wordMult == 4: // unused for kelimelik
-				// r = '~'
 			default:
 				termbox.SetCell(x+col*2, y+row, ' ', fgcolor, bgcolor)
 			}
 		}
 	}
-}
-
-func getLetterScoreSubscript(score int) (r rune) {
-	switch score {
-	case 0:
-		r = '₀'
-	case 1:
-		r = '₁'
-	case 2:
-		r = '₂'
-	case 3:
-		r = '₃'
-	case 4:
-		r = '₄'
-	case 5:
-		r = '₅'
-	case 6:
-		r = '₆'
-	case 7:
-		r = '₇'
-	case 8:
-		r = '₈'
-	case 9:
-		r = '₉'
-	case 10:
-		r = '⏨'
-	}
-	return r
 }
 
 func drawLegend() {
@@ -190,6 +142,19 @@ func drawLegend() {
 	tbprint("H³", x+2, y, termbox.ColorWhite, termbox.ColorMagenta)
 	tbprint("K²", x+4, y, termbox.ColorWhite, termbox.ColorGreen)
 	tbprint("K³", x+6, y, termbox.ColorWhite, termbox.ColorBlack)
+}
+
+func drawGameover() {
+	termbox.Clear(fgcolor, bgcolor)
+	sw, sh := termbox.Size()
+	tbprint("GAME OVER", sw/2-4, sh/2, fgcolor, bgcolor)
+	termbox.Flush()
+	time.Sleep(1 * time.Second)
+}
+
+func getScoreRune(score int) (r rune) {
+	score2rune := []rune{' ', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉', '⏨'}
+	return score2rune[score]
 }
 
 // tbprint prints the msg onto (x,y) position of the grid.
@@ -210,62 +175,20 @@ func fill(x, y, w, h int, r rune) {
 	}
 }
 
-// func move() {
-// 	// play
-// 	for {
-// 		if getCurPos(game).GameOver() {
-// 			fmt.Println("GAME OVER!")
-// 			break
-// 		}
-// 		player := getCurPos(game).CurrentPlayer().(quackle.Player)
+// drawRect draws a box with unicode borders at position (x,y) with area of
+// w*h.
+func drawRect(x, y, w, h int) {
+	// top border
+	termbox.SetCell(x-1, y-1, '┌', fgcolor, bgcolor)
+	fill(x, y-1, w*2, 1, '─')
+	termbox.SetCell(x+w*2, y-1, '┐', fgcolor, bgcolor)
 
-// 		// go on cold heartless machine!
-// 		if quackle.QuacklePlayerPlayerType(player.Xtype()) == quackle.PlayerComputerPlayerType {
-// 			move := game.HaveComputerPlay()
-// 			fmt.Println("Rack: ", player.Rack().ToString())
-// 			fmt.Println("Move: ", move.ToString())
-// 			fmt.Printf("Board:\n %v\n", getCurPos(game).Board().ToString())
-// 			continue
-// 		}
+	// body border
+	fill(x-1, y, 1, h, '│')
+	fill(x+w*2, y, 1, h, '│')
 
-// 		game.AdvanceToNoncomputerPlayer()
-// 		fmt.Println("Rack: ", player.Rack().ToString())
-
-// 		// read input
-// 		var move quackle.Move
-// 	MOVELOOP:
-// 		for {
-// 			r := bufio.NewReader(os.Stdin)
-// 			input, _ := r.ReadString('\n')
-// 			input = strings.TrimSuffix(input, "\n")
-// 			fields := strings.Fields(input)
-// 			switch len(fields) {
-// 			case 1:
-// 				// pass
-// 				if fields[0] == "-" {
-// 					move = quackle.MoveCreatePassMove()
-// 					game.CommitMove(move)
-// 					break MOVELOOP
-// 				}
-// 				fmt.Println("NEIN! gecerli biseyler yaz")
-// 				continue MOVELOOP
-// 			case 2:
-// 				place, word := fields[0], fields[1]
-// 				move = quackle.MoveCreatePlaceMove(place, dm.AlphabetParameters().Encode(word))
-// 				if getCurPos(game).ValidateMove(move) == int(quackle.GamePositionValidMove) {
-// 					game.CommitMove(move)
-// 					break MOVELOOP
-// 				}
-// 				fmt.Println("NEIN! gecerli bir hamle degil")
-// 				continue MOVELOOP
-// 			default:
-// 				fmt.Println("NEIN! gecerli biseyler yaz")
-// 				continue MOVELOOP
-// 			}
-// 		}
-
-// 		fmt.Println("Rack: ", player.Rack().ToString())
-// 		fmt.Println("Move: ", move.ToString())
-// 		fmt.Printf("Board:\n %v\n", getCurPos(game).Board().ToString())
-// 	}
-// }
+	// bottom border
+	termbox.SetCell(x-1, y+h, '└', fgcolor, bgcolor)
+	fill(x, y+h, w*2, 1, '─')
+	termbox.SetCell(x+w*2, y+h, '┘', fgcolor, bgcolor)
+}
