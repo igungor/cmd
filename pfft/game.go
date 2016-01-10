@@ -47,7 +47,6 @@ func (g *game) draw() {
 	termbox.Clear(fgcolor, bgcolor)
 	defer termbox.Flush()
 
-	redraw_all()
 	sw, sh := termbox.Size()
 
 	// board
@@ -79,6 +78,7 @@ func (g *game) draw() {
 	// boxx := (sw-g.board.w*2+2+1)/2 - g.editbox.w/2
 	// boxy := sh/2 + g.board.h
 	// g.editbox.draw(boxx, boxy)
+	redraw_all()
 }
 
 func (g *game) loop() {

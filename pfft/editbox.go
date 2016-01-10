@@ -58,13 +58,14 @@ type EditBox struct {
 	cursor_boffset int // cursor offset in bytes
 	cursor_voffset int // visual cursor offset in termbox cells
 	cursor_coffset int // cursor offset in unicode code points
+	w, h           int
 }
 
 // Draws the EditBox in the given location, 'h' is not used at the moment
-func (eb *EditBox) Draw(x, y, w, h int) {
-	eb.AdjustVOffset(w)
+func (eb *EditBox) Draw(x, y int) {
+	eb.AdjustVOffset(eb.w)
 
-	fill(x, y, w, h, ' ')
+	fill(x, y, eb.w, eb.h, ' ')
 
 	t := eb.text
 	lx := 0
@@ -79,8 +80,8 @@ func (eb *EditBox) Draw(x, y, w, h int) {
 			tabstop += tabstop_length
 		}
 
-		if rx >= w {
-			termbox.SetCell(x+w-1, y, '→',
+		if rx >= eb.w {
+			termbox.SetCell(x+eb.w-1, y, '→',
 				fgcolor, bgcolor)
 			break
 		}
@@ -89,7 +90,7 @@ func (eb *EditBox) Draw(x, y, w, h int) {
 		if r == '\t' {
 			for ; lx < tabstop; lx++ {
 				rx = lx - eb.line_voffset
-				if rx >= w {
+				if rx >= eb.w {
 					goto next
 				}
 
@@ -208,7 +209,7 @@ func (eb *EditBox) CursorX() int {
 	return eb.cursor_voffset - eb.line_voffset
 }
 
-var edit_box EditBox
+var edit_box = EditBox{w: edit_box_width}
 
 const edit_box_width = 30
 
@@ -221,7 +222,7 @@ func redraw_all() {
 	// unicode box drawing chars around the edit box
 	drawRect(midx, midy, edit_box_width, 1)
 
-	edit_box.Draw(midx, midy, edit_box_width, 1)
+	edit_box.Draw(midx, midy)
 	termbox.SetCursor(midx+edit_box.CursorX(), midy)
 
 	tbprint("Press ESC to quit", midx+6, midy+3, fgcolor, bgcolor)
