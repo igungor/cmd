@@ -176,8 +176,8 @@ func newGame() *game {
 
 	// set up players and game
 	g := quackle.NewGame()
-	player1 := newCompPlayer("player1", 0)
-	player2 := newCompPlayer("player2", 1)
+	player1 := newCompPlayer("Player 1", 0)
+	player2 := newCompPlayer("Player 2", 1)
 	players := quackle.NewPlayerList()
 	players.Add(player1)
 	players.Add(player2)
@@ -192,9 +192,10 @@ func newGame() *game {
 	}
 
 	return &game{
-		qg:    g,
-		board: b,
-		rack1: newRack("Player 1"),
-		rack2: newRack("Player 2"),
+		qg:         g,
+		board:      b,
+		rack1:      newRack(player1.Name()),
+		rack2:      newRack(player2.Name()),
+		showLegend: true,
 	}
 }
