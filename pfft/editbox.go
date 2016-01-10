@@ -63,6 +63,7 @@ type EditBox struct {
 
 // Draws the EditBox in the given location, 'h' is not used at the moment
 func (eb *EditBox) Draw(x, y int) {
+	drawRect(x, y, eb.w, eb.h)
 	eb.AdjustVOffset(eb.w)
 
 	fill(x, y, eb.w, eb.h, ' ')
@@ -111,6 +112,7 @@ func (eb *EditBox) Draw(x, y int) {
 	if eb.line_voffset != 0 {
 		termbox.SetCell(x, y, '←', fgcolor, bgcolor)
 	}
+	termbox.SetCursor(x+edit_box.CursorX(), y)
 }
 
 // Adjusts line visual offset to a proper value depending on width
@@ -209,21 +211,6 @@ func (eb *EditBox) CursorX() int {
 	return eb.cursor_voffset - eb.line_voffset
 }
 
-var edit_box = EditBox{w: edit_box_width}
+var edit_box = EditBox{w: edit_box_width, h: 1}
 
 const edit_box_width = 30
-
-func redraw_all() {
-	w, h := termbox.Size()
-
-	midy := h/2 - 15
-	midx := (w - edit_box_width) / 2
-
-	// unicode box drawing chars around the edit box
-	drawRect(midx, midy, edit_box_width, 1)
-
-	edit_box.Draw(midx, midy)
-	termbox.SetCursor(midx+edit_box.CursorX(), midy)
-
-	tbprint("Press ESC to quit", midx+6, midy+3, fgcolor, bgcolor)
-}

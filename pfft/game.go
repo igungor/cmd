@@ -75,10 +75,9 @@ func (g *game) draw() {
 	}
 
 	// editbox
-	// boxx := (sw-g.board.w*2+2+1)/2 - g.editbox.w/2
-	// boxy := sh/2 + g.board.h
-	// g.editbox.draw(boxx, boxy)
-	redraw_all()
+	boxx := (sw - edit_box_width) / 2
+	boxy := sh/2 - 15
+	edit_box.Draw(boxx, boxy)
 }
 
 func (g *game) loop() {
