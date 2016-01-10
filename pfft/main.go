@@ -33,10 +33,7 @@ func realMain() error {
 	termbox.SetInputMode(termbox.InputEsc | termbox.InputMouse)
 
 	initGame()
-
-	drawBoard(getCurPos(game).Board())
-	drawLegend()
-	termbox.Flush()
+	drawGame()
 
 mainloop:
 	for {
@@ -56,29 +53,32 @@ mainloop:
 			default:
 			}
 		case termbox.EventResize:
-			drawBoard(getCurPos(game).Board())
-			drawLegend()
-			termbox.Flush()
+			drawGame()
 		case termbox.EventMouse:
 			// TODO(ig): handle mouse clicks
 		case termbox.EventError:
 			return ev.Err
 		}
-		drawBoard(getCurPos(game).Board())
-		drawLegend()
-		termbox.Flush()
+		drawGame()
 	}
 	return nil
+}
+
+func drawGame() {
+	termbox.Clear(fgcolor, bgcolor)
+	drawBoard(getCurPos(game).Board())
+	drawLegend()
+	drawRack1()
+	drawRack2()
+	termbox.Flush()
 }
 
 // drawBoard draws the board at the center of the grid.
 func drawBoard(board quackle.Board) {
 	sw, sh := termbox.Size()
-	x := (sw - boardsize*2 + 2 + 1 + 1) / 2
-	y := (sh - boardsize + 1 + 1 + 1) / 2
+	x := (sw - boardsize*2 + 2 + 1) / 2
+	y := (sh - boardsize + 1 + 1) / 2
 	w, h := boardsize, boardsize
-
-	termbox.Clear(fgcolor, bgcolor)
 
 	// columns on the top
 	for dx := 0; dx < w; dx++ {
@@ -144,6 +144,12 @@ func drawLegend() {
 	tbprint("K³", x+6, y, termbox.ColorWhite, termbox.ColorBlack)
 }
 
+func drawRack1() {
+}
+
+func drawRack2() {
+}
+
 func drawGameover() {
 	termbox.Clear(fgcolor, bgcolor)
 	sw, sh := termbox.Size()
@@ -153,11 +159,10 @@ func drawGameover() {
 }
 
 func getScoreRune(score int) (r rune) {
-	score2rune := []rune{' ', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉', '⏨'}
 	return score2rune[score]
 }
 
-// tbprint prints the msg onto (x,y) position of the grid.
+// tbprint prints the msg at (x,y) position of the grid.
 func tbprint(msg string, x, y int, fg, bg termbox.Attribute) {
 	for _, c := range msg {
 		termbox.SetCell(x, y, c, fg, bg)
@@ -165,7 +170,7 @@ func tbprint(msg string, x, y int, fg, bg termbox.Attribute) {
 	}
 }
 
-// fill fills a box of w*h area with r runes starting from (x,y) position of
+// fill fills a rectanngle at position (x,y) with area of w*h.
 // the grid.
 func fill(x, y, w, h int, r rune) {
 	for ly := 0; ly < h; ly++ {
@@ -175,7 +180,7 @@ func fill(x, y, w, h int, r rune) {
 	}
 }
 
-// drawRect draws a box with unicode borders at position (x,y) with area of
+// drawRect draws a rectangle with unicode borders at position (x,y) with area of
 // w*h.
 func drawRect(x, y, w, h int) {
 	// top border
