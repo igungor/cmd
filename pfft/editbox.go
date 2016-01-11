@@ -7,8 +7,8 @@ import (
 	termbox "github.com/nsf/termbox-go"
 )
 
-const tabstopLength = 8
 const preferredHorizontalThreshold = 5
+const editboxWidth = 14
 
 type editbox struct {
 	text             []byte
@@ -17,6 +17,13 @@ type editbox struct {
 	curVisOffset     int // visual cursor offset in termbox cells
 	curUnicodeOffset int // cursor offset in unicode code points
 	w, h             int
+}
+
+func newEditbox() editbox {
+	return editbox{
+		w: editboxWidth,
+		h: 1,
+	}
 }
 
 // Draws the editbox in the given location, 'h' is not used at the moment
@@ -28,15 +35,10 @@ func (eb *editbox) draw(x, y int) {
 
 	t := eb.text
 	lx := 0
-	tabstop := 0
 	for {
 		rx := lx - eb.lineVisOffset
 		if len(t) == 0 {
 			break
-		}
-
-		if lx == tabstop {
-			tabstop += tabstopLength
 		}
 
 		if rx >= eb.w {
@@ -46,31 +48,18 @@ func (eb *editbox) draw(x, y int) {
 		}
 
 		r, size := utf8.DecodeRune(t)
-		if r == '\t' {
-			for ; lx < tabstop; lx++ {
-				rx = lx - eb.lineVisOffset
-				if rx >= eb.w {
-					goto next
-				}
-
-				if rx >= 0 {
-					termbox.SetCell(x+rx, y, ' ', fgcolor, bgcolor)
-				}
-			}
-		} else {
-			if rx >= 0 {
-				termbox.SetCell(x+rx, y, r, fgcolor, bgcolor)
-			}
-			lx += 1
+		if rx >= 0 {
+			termbox.SetCell(x+rx, y, r, fgcolor, bgcolor)
 		}
-	next:
+		lx += 1
 		t = t[size:]
 	}
 
 	if eb.lineVisOffset != 0 {
 		termbox.SetCell(x, y, '←', fgcolor, bgcolor)
 	}
-	termbox.SetCursor(x+eb.CursorX(), y)
+	cursorx := eb.curVisOffset - eb.lineVisOffset
+	termbox.SetCursor(x+cursorx, y)
 }
 
 // Adjusts line visual offset to a proper value depending on width
@@ -164,25 +153,13 @@ func (eb *editbox) InsertRune(r rune) {
 	eb.MoveCursorOneRuneForward()
 }
 
-// Please, keep in mind that cursor depends on the value of lineVisOffset, which
-// is being set on Draw() call, so.. call this method after Draw() one.
-func (eb *editbox) CursorX() int {
-	return eb.curVisOffset - eb.lineVisOffset
-}
-func runeAdvanceLen(r rune, pos int) int {
-	if r == '\t' {
-		return tabstopLength - pos%tabstopLength
-	}
-	return 1
-}
-
 func visOffset2codeOffset(text []byte, boffset int) (voffset, coffset int) {
 	text = text[:boffset]
 	for len(text) > 0 {
-		r, size := utf8.DecodeRune(text)
+		_, size := utf8.DecodeRune(text)
 		text = text[size:]
 		coffset += 1
-		voffset += runeAdvanceLen(r, voffset)
+		voffset += 1
 	}
 	return
 }

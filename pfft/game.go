@@ -218,17 +218,12 @@ func newGame() *game {
 		h:  boardsize,
 	}
 
-	editbox := editbox{
-		w: 20,
-		h: 1,
-	}
-
 	return &game{
 		qg:         g,
 		board:      b,
 		rack1:      newRack(player1.Name()),
 		rack2:      newRack(player2.Name()),
-		editbox:    editbox,
+		editbox:    newEditbox(),
 		showLegend: true,
 	}
 }
