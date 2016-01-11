@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/igungor/quackle"
@@ -10,11 +12,10 @@ import (
 const (
 	lexicon  = "turkish"
 	alphabet = "turkish"
-	datadir  = "data"
 )
 
 // hacky stuff.
-// var datadir = fmt.Sprintf("%v/src/github.com/igungor/cmd/pfft/data", os.Getenv("GOPATH"))
+var datadir = fmt.Sprintf("%v/src/github.com/igungor/cmd/pfft/data", os.Getenv("GOPATH"))
 
 const (
 	fgcolor = termbox.ColorDefault
