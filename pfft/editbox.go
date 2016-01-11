@@ -46,9 +46,9 @@ func (eb *editbox) draw(x, y int) {
 		}
 
 		// pass
-		// if lx == 0 && r == '-' {
-		// 	termbox.SetCell(x, y, '⚐', fgcolor|termbox.AttrBold, bgcolor)
-		// }
+		if lx == 0 && r == '-' {
+			termbox.SetCell(x, y, '⚐', fgcolor|termbox.AttrBold, bgcolor)
+		}
 
 		termbox.SetCell(x+lx+2, y, r, fgcolor, bgcolor)
 		lx += 1
@@ -59,6 +59,9 @@ func (eb *editbox) draw(x, y int) {
 
 func (eb *editbox) getPlaceWord() (string, string, error) {
 	s := strings.Fields(string(eb.text))
+	if len(s) == 1 && s[0] == "-" {
+		return s[0], "", nil
+	}
 	if len(s) != 2 {
 		return "", "", fmt.Errorf("`B2 SELAM` formatinda olmali")
 	}

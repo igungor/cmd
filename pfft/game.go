@@ -60,11 +60,11 @@ func (g *game) draw() {
 	}
 
 	// racks
-	rack1x := sw/2 - g.board.w - 8 - g.rack1.w
-	rack1y := (sh-g.board.w)/2 + 1
+	rack1x := boardx
+	rack1y := boardy + g.board.h + 2
 	g.rack1.draw(rack1x, rack1y)
-	rack2x := sw/2 + g.board.w + 8
-	rack2y := (sh-g.board.w)/2 + 1
+	rack2x := boardx + g.rack1.w + 2
+	rack2y := boardy + g.board.h + 2
 	g.rack2.draw(rack2x, rack2y)
 	if g.curPlayer().Id() == 0 {
 		g.rack1.highlight(rack1x, rack1y)
@@ -74,7 +74,7 @@ func (g *game) draw() {
 
 	// editbox
 	boxx := (sw-g.editbox.w)/2 + 1
-	boxy := sh/2 + 12
+	boxy := (sh+g.board.h)/2 + g.rack1.h + 5
 	g.editbox.draw(boxx, boxy)
 }
 
@@ -132,7 +132,12 @@ func (g *game) doHumanMove() {
 	if err != nil {
 		return
 	}
-	move := quackle.MoveCreatePlaceMove(place, flexAbc.Encode(word))
+	var move quackle.Move
+	if place == "-" {
+		move = quackle.MoveCreatePassMove()
+	} else {
+		move = quackle.MoveCreatePlaceMove(place, flexAbc.Encode(word))
+	}
 	if g.pos().ValidateMove(move) != 0 {
 		return
 	}
