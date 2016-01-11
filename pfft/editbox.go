@@ -1,6 +1,7 @@
 package main
 
 import (
+	"unicode"
 	"unicode/utf8"
 
 	termbox "github.com/nsf/termbox-go"
@@ -156,6 +157,7 @@ func (eb *editbox) DeleteTheRestOfTheLine() {
 }
 
 func (eb *editbox) InsertRune(r rune) {
+	r = unicode.TurkishCase.ToUpper(r)
 	var buf [utf8.UTFMax]byte
 	n := utf8.EncodeRune(buf[:], r)
 	eb.text = byteSliceInsert(eb.text, eb.curByteOffset, buf[:n])
