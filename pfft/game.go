@@ -201,8 +201,7 @@ func newGame() *game {
 	dm.LexiconParameters().LoadGaddag(gaddag)
 	dm.StrategyParameters().Initialize(lexicon)
 
-	// dm.SeedRandomNumbers(uint(time.Now().UnixNano()))
-	dm.SeedRandomNumbers(42)
+	dm.SeedRandomNumbers(uint(time.Now().UnixNano()))
 
 	newCompPlayer := func(name string, id int) quackle.Player {
 		found := make([]bool, 1)
