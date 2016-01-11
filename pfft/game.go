@@ -86,12 +86,19 @@ mainloop:
 			g.over()
 			break mainloop
 		}
+
+		if g.curPlayer().Xtype() == 0 {
+			g.qg.HaveComputerPlay()
+			goto humanMove
+		}
+		g.qg.AdvanceToNoncomputerPlayer()
+
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
 			switch ev.Key {
 			case termbox.KeyEnter:
-				// new move
-				g.qg.HaveComputerPlay()
+				// new human move
+				g.doHumanMove()
 			case termbox.KeyCtrlS:
 				g.board.showScore = !g.board.showScore
 			case termbox.KeyCtrlL:
@@ -114,8 +121,22 @@ mainloop:
 		case termbox.EventError:
 			panic(ev.Err)
 		}
+	humanMove:
 		g.draw()
 	}
+}
+
+// FIXME(ig): print proper errors
+func (g *game) doHumanMove() {
+	place, word, err := g.editbox.getPlaceWord()
+	if err != nil {
+		return
+	}
+	move := quackle.MoveCreatePlaceMove(place, flexAbc.Encode(word))
+	if g.pos().ValidateMove(move) != 0 {
+		return
+	}
+	g.qg.CommitMove(move)
 }
 
 // over draws game-over screen.
@@ -191,8 +212,8 @@ func newGame() *game {
 
 	// set up players and game
 	g := quackle.NewGame()
-	player1 := newCompPlayer("Player 1", 0)
-	player2 := newCompPlayer("Player 2", 1)
+	player1 := quackle.NewPlayer("iby", int(quackle.PlayerHumanPlayerType), 0)
+	player2 := newCompPlayer("Computer", 1)
 	players := quackle.NewPlayerList()
 	players.Add(player1)
 	players.Add(player2)

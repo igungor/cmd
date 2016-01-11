@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -34,18 +36,33 @@ func (eb *editbox) draw(x, y int) {
 			break
 		}
 		r, size := utf8.DecodeRune(t)
+		// topdown words
 		if lx == 0 && unicode.IsLetter(r) {
 			termbox.SetCell(x, y, '↓', fgcolor|termbox.AttrBold, bgcolor)
 		}
+		// leftright words
 		if lx == 0 && unicode.IsNumber(r) {
 			termbox.SetCell(x, y, '→', fgcolor|termbox.AttrBold, bgcolor)
 		}
+
+		// pass
+		// if lx == 0 && r == '-' {
+		// 	termbox.SetCell(x, y, '⚐', fgcolor|termbox.AttrBold, bgcolor)
+		// }
 
 		termbox.SetCell(x+lx+2, y, r, fgcolor, bgcolor)
 		lx += 1
 		t = t[size:]
 	}
-	// termbox.SetCursor(x+lx+2, y)
+	termbox.SetCursor(x+lx+2, y)
+}
+
+func (eb *editbox) getPlaceWord() (string, string, error) {
+	s := strings.Fields(string(eb.text))
+	if len(s) != 2 {
+		return "", "", fmt.Errorf("`B2 SELAM` formatinda olmali")
+	}
+	return s[0], s[1], nil
 }
 
 func (eb *editbox) MoveCursorTo(boffset int) {
