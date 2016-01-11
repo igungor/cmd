@@ -24,8 +24,6 @@ const (
 var dm quackle.DataManager
 var flexAbc quackle.FlexibleAlphabetParameters
 
-type editbox struct{}
-
 type game struct {
 	qg      quackle.Game
 	board   board
@@ -75,9 +73,9 @@ func (g *game) draw() {
 	}
 
 	// editbox
-	boxx := (sw - edit_box_width) / 2
-	boxy := sh/2 - 15
-	edit_box.Draw(boxx, boxy)
+	boxx := (sw-g.editbox.w)/2 + 1
+	boxy := sh/2 + 12
+	g.editbox.draw(boxx, boxy)
 }
 
 func (g *game) loop() {
@@ -99,26 +97,26 @@ mainloop:
 			case termbox.KeyCtrlL:
 				g.showLegend = !g.showLegend
 			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
-				edit_box.MoveCursorOneRuneBackward()
+				g.editbox.MoveCursorOneRuneBackward()
 			case termbox.KeyArrowRight, termbox.KeyCtrlF:
-				edit_box.MoveCursorOneRuneForward()
+				g.editbox.MoveCursorOneRuneForward()
 			case termbox.KeyBackspace, termbox.KeyBackspace2:
-				edit_box.DeleteRuneBackward()
+				g.editbox.DeleteRuneBackward()
 			case termbox.KeyDelete, termbox.KeyCtrlD:
-				edit_box.DeleteRuneForward()
+				g.editbox.DeleteRuneForward()
 			case termbox.KeySpace:
-				edit_box.InsertRune(' ')
+				g.editbox.InsertRune(' ')
 			case termbox.KeyCtrlK:
-				edit_box.DeleteTheRestOfTheLine()
+				g.editbox.DeleteTheRestOfTheLine()
 			case termbox.KeyHome, termbox.KeyCtrlA:
-				edit_box.MoveCursorToBeginningOfTheLine()
+				g.editbox.MoveCursorToBeginningOfTheLine()
 			case termbox.KeyEnd, termbox.KeyCtrlE:
-				edit_box.MoveCursorToEndOfTheLine()
+				g.editbox.MoveCursorToEndOfTheLine()
 			case termbox.KeyEsc, termbox.KeyCtrlC:
 				break mainloop
 			default:
 				if ev.Ch != 0 {
-					edit_box.InsertRune(ev.Ch)
+					g.editbox.InsertRune(ev.Ch)
 				}
 			}
 		case termbox.EventResize:
@@ -220,7 +218,10 @@ func newGame() *game {
 		h:  boardsize,
 	}
 
-	editbox := editbox{}
+	editbox := editbox{
+		w: 20,
+		h: 1,
+	}
 
 	return &game{
 		qg:         g,
