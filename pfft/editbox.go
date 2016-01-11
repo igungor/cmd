@@ -65,6 +65,11 @@ func (eb *editbox) getPlaceWord() (string, string, error) {
 	return s[0], s[1], nil
 }
 
+func (eb *editbox) clear() {
+	eb.MoveCursorTo(0)
+	eb.text = eb.text[:eb.curByteOffset]
+}
+
 func (eb *editbox) MoveCursorTo(boffset int) {
 	eb.curByteOffset = boffset
 }
@@ -104,7 +109,8 @@ func (eb *editbox) DeleteRuneBackward() {
 }
 
 func (eb *editbox) InsertRune(r rune) {
-	if utf8.RuneCount(eb.text) >= 10 {
+	// ___ _______ -> total of 11 runes
+	if utf8.RuneCount(eb.text) >= 11 {
 		return
 	}
 	r = unicode.TurkishCase.ToUpper(r)

@@ -137,6 +137,7 @@ func (g *game) doHumanMove() {
 		return
 	}
 	g.qg.CommitMove(move)
+	g.editbox.clear()
 }
 
 // over draws game-over screen.
