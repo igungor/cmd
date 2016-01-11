@@ -7,16 +7,13 @@ import (
 	termbox "github.com/nsf/termbox-go"
 )
 
-const preferredHorizontalThreshold = 5
+const preferredHorizontalThreshold = 3
 const editboxWidth = 14
 
 type editbox struct {
-	text             []byte
-	lineVisOffset    int
-	curByteOffset    int // cursor offset in bytes
-	curVisOffset     int // visual cursor offset in termbox cells
-	curUnicodeOffset int // cursor offset in unicode code points
-	w, h             int
+	text          []byte
+	curByteOffset int // cursor offset in bytes
+	w, h          int
 }
 
 func newEditbox() editbox {
@@ -29,66 +26,30 @@ func newEditbox() editbox {
 // Draws the editbox in the given location, 'h' is not used at the moment
 func (eb *editbox) draw(x, y int) {
 	drawRect(x, y, eb.w, eb.h)
-	eb.AdjustVOffset(eb.w)
-
-	fill(x, y, eb.w, eb.h, ' ')
 
 	t := eb.text
 	lx := 0
 	for {
-		rx := lx - eb.lineVisOffset
 		if len(t) == 0 {
 			break
 		}
-
-		if rx >= eb.w {
-			termbox.SetCell(x+eb.w-1, y, '→',
-				fgcolor, bgcolor)
-			break
-		}
-
 		r, size := utf8.DecodeRune(t)
-		if rx >= 0 {
-			termbox.SetCell(x+rx, y, r, fgcolor, bgcolor)
+		if lx == 0 && unicode.IsLetter(r) {
+			termbox.SetCell(x, y, '↓', fgcolor|termbox.AttrBold, bgcolor)
 		}
+		if lx == 0 && unicode.IsNumber(r) {
+			termbox.SetCell(x, y, '→', fgcolor|termbox.AttrBold, bgcolor)
+		}
+
+		termbox.SetCell(x+lx+2, y, r, fgcolor, bgcolor)
 		lx += 1
 		t = t[size:]
 	}
-
-	if eb.lineVisOffset != 0 {
-		termbox.SetCell(x, y, '←', fgcolor, bgcolor)
-	}
-	cursorx := eb.curVisOffset - eb.lineVisOffset
-	termbox.SetCursor(x+cursorx, y)
-}
-
-// Adjusts line visual offset to a proper value depending on width
-func (eb *editbox) AdjustVOffset(width int) {
-	ht := preferredHorizontalThreshold
-	max_h_threshold := (width - 1) / 2
-	if ht > max_h_threshold {
-		ht = max_h_threshold
-	}
-
-	threshold := width - 1
-	if eb.lineVisOffset != 0 {
-		threshold = width - ht
-	}
-	if eb.curVisOffset-eb.lineVisOffset >= threshold {
-		eb.lineVisOffset = eb.curVisOffset + (ht - width + 1)
-	}
-
-	if eb.lineVisOffset != 0 && eb.curVisOffset-eb.lineVisOffset < ht {
-		eb.lineVisOffset = eb.curVisOffset - ht
-		if eb.lineVisOffset < 0 {
-			eb.lineVisOffset = 0
-		}
-	}
+	// termbox.SetCursor(x+lx+2, y)
 }
 
 func (eb *editbox) MoveCursorTo(boffset int) {
 	eb.curByteOffset = boffset
-	eb.curVisOffset, eb.curUnicodeOffset = visOffset2codeOffset(eb.text, boffset)
 }
 
 func (eb *editbox) RuneUnderCursor() (rune, int) {
@@ -115,14 +76,6 @@ func (eb *editbox) MoveCursorOneRuneForward() {
 	eb.MoveCursorTo(eb.curByteOffset + size)
 }
 
-func (eb *editbox) MoveCursorToBeginningOfTheLine() {
-	eb.MoveCursorTo(0)
-}
-
-func (eb *editbox) MoveCursorToEndOfTheLine() {
-	eb.MoveCursorTo(len(eb.text))
-}
-
 func (eb *editbox) DeleteRuneBackward() {
 	if eb.curByteOffset == 0 {
 		return
@@ -133,35 +86,15 @@ func (eb *editbox) DeleteRuneBackward() {
 	eb.text = byteSliceRemove(eb.text, eb.curByteOffset, eb.curByteOffset+size)
 }
 
-func (eb *editbox) DeleteRuneForward() {
-	if eb.curByteOffset == len(eb.text) {
+func (eb *editbox) InsertRune(r rune) {
+	if utf8.RuneCount(eb.text) >= 10 {
 		return
 	}
-	_, size := eb.RuneUnderCursor()
-	eb.text = byteSliceRemove(eb.text, eb.curByteOffset, eb.curByteOffset+size)
-}
-
-func (eb *editbox) DeleteTheRestOfTheLine() {
-	eb.text = eb.text[:eb.curByteOffset]
-}
-
-func (eb *editbox) InsertRune(r rune) {
 	r = unicode.TurkishCase.ToUpper(r)
 	var buf [utf8.UTFMax]byte
 	n := utf8.EncodeRune(buf[:], r)
 	eb.text = byteSliceInsert(eb.text, eb.curByteOffset, buf[:n])
 	eb.MoveCursorOneRuneForward()
-}
-
-func visOffset2codeOffset(text []byte, boffset int) (voffset, coffset int) {
-	text = text[:boffset]
-	for len(text) > 0 {
-		_, size := utf8.DecodeRune(text)
-		text = text[size:]
-		coffset += 1
-		voffset += 1
-	}
-	return
 }
 
 func byteSliceGrow(s []byte, desired_cap int) []byte {

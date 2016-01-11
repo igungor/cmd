@@ -96,22 +96,10 @@ mainloop:
 				g.board.showScore = !g.board.showScore
 			case termbox.KeyCtrlL:
 				g.showLegend = !g.showLegend
-			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
-				g.editbox.MoveCursorOneRuneBackward()
-			case termbox.KeyArrowRight, termbox.KeyCtrlF:
-				g.editbox.MoveCursorOneRuneForward()
 			case termbox.KeyBackspace, termbox.KeyBackspace2:
 				g.editbox.DeleteRuneBackward()
-			case termbox.KeyDelete, termbox.KeyCtrlD:
-				g.editbox.DeleteRuneForward()
 			case termbox.KeySpace:
 				g.editbox.InsertRune(' ')
-			case termbox.KeyCtrlK:
-				g.editbox.DeleteTheRestOfTheLine()
-			case termbox.KeyHome, termbox.KeyCtrlA:
-				g.editbox.MoveCursorToBeginningOfTheLine()
-			case termbox.KeyEnd, termbox.KeyCtrlE:
-				g.editbox.MoveCursorToEndOfTheLine()
 			case termbox.KeyEsc, termbox.KeyCtrlC:
 				break mainloop
 			default:
