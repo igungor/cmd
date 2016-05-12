@@ -66,10 +66,13 @@ func (f FFProbeOutput) String() string {
 		buf.WriteString(fmt.Sprintf("Stream '%v'\n", i))
 		buf.WriteString(fmt.Sprintf("\tcodec-type: %q\n", s.CodecType))
 		buf.WriteString(fmt.Sprintf("\tcodec-name: %q\n", s.CodecName))
-		if s.CodecType == "audio" || s.CodecType == "subtitle" {
-			if s.Tags.Title != "" && s.Tags.Language != "" {
+		switch s.CodecType {
+		case "audio", "subtitle":
+			if s.Tags.Language != "" {
 				buf.WriteString(fmt.Sprintf("\tlanguage: %q | %q\n", s.Tags.Language, s.Tags.Title))
 			}
+		case "video":
+			buf.WriteString(fmt.Sprintf("\tresolution: %vx%v\n", s.Width, s.Height))
 		}
 	}
 
