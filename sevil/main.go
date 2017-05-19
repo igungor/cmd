@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -19,6 +21,12 @@ func main() {
 	log.SetFlags(0)
 	log.SetPrefix("sevil: ")
 
+	var (
+		flagHost = flag.String("host", "0.0.0.0", "host")
+		flagPort = flag.String("port", "1987", "port")
+	)
+	flag.Parse()
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
@@ -32,7 +40,8 @@ func main() {
 			return
 		}
 	})
-	log.Fatal(http.ListenAndServe(":1985", nil))
+
+	log.Fatal(http.ListenAndServe(net.JoinHostPort(*flagHost, *flagPort), nil))
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
