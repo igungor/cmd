@@ -158,7 +158,14 @@ const indexHtml = `
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
         <style>
-            .top-buffer {margin-top:60px;}
+            .top-buffer {
+				margin-top:120px;
+			}
+			.parrot {
+				position: fixed;
+				bottom: 0;
+				right: 0;
+			}
         </style>
     </head>
 
@@ -175,6 +182,9 @@ const indexHtml = `
                 </div>
             </div>
         </form>
+		<div class="parrot">
+			<img src="https://raw.githubusercontent.com/spacejam/tla-rust/master/parrot.gif" class="mx-auto">
+		</div>
     </body>
 </html>
 `
