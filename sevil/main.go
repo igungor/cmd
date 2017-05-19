@@ -117,6 +117,11 @@ func download(yt string) (string, error) {
 		if strings.Contains(string(output), "is not a valid") {
 			return "", fmt.Errorf("%q gecerli bir URL degil", yt)
 		}
+
+		if strings.Contains(string(output), "Unsupported URL") {
+			return "", fmt.Errorf("%q tanidik bir Youtube adresine benzemiyo yalniz", yt)
+		}
+
 		log.Printf("youtube-dl failed for some reason: %v. Output: %v\n\nIgnoring the error...\n", err, string(output))
 	}
 
