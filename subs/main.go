@@ -58,9 +58,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintf(os.Stderr, "subs <argument>\n")
-	fmt.Fprintf(os.Stderr, "\targument: a video file\n")
-	fmt.Fprintf(os.Stderr, "\targument: an episode title\n")
+	fmt.Fprintf(os.Stderr, "subs <episode title>\n")
 	flag.PrintDefaults()
 	os.Exit(1)
 }
