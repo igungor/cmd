@@ -47,6 +47,7 @@ func main() {
 
 	tw := tabwriter.NewWriter(os.Stdout, 4, 4, 1, ' ', tabwriter.Debug)
 	tw.Write([]byte("S\tE\tTitle\tLanguage\tRelease\tHI\n"))
+	tw.Write([]byte("-\t-\t-----\t--------\t-------\t--\n"))
 	for _, sub := range subs {
 		io.Copy(tw, strings.NewReader(sub.String()))
 	}

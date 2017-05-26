@@ -95,20 +95,12 @@ func (a *Addic7ed) Query(ctx context.Context, q string) ([]subtitle, error) {
 
 	title := ep.SeriesTitleInfo.TitleWithoutYear
 	title = strings.ToLower(title)
+	titleWithYear := fmt.Sprintf("%v (%v)", title, ep.SeriesTitleInfo.Year)
 
-	id, ok := ids[title]
-	if !ok {
-		return nil, fmt.Errorf("Series id could not be found for query %q", q)
+	id := ids.in(title, titleWithYear)
+	if id == "" {
+		return nil, fmt.Errorf("Show ID could not be found for %q\n", q)
 	}
-
-	// if ep.SeriesTitleInfo.Year != 0 {
-	// 	title = fmt.Sprintf("%v (%v)", ep.SeriesTitleInfo.TitleWithoutYear, ep.SeriesTitleInfo.Year)
-	// 	title = strings.ToLower(title)
-	// 	id, ok = ids[title]
-	// 	if ok {
-	// 		return id, nil
-	// 	}
-	// }
 
 	req, err := http.NewRequest("GET", baseURL+"/show/"+id+"?season="+strconv.Itoa(ep.SeasonNumber), nil)
 	if err != nil {
@@ -211,7 +203,7 @@ func (a *Addic7ed) Download(ctx context.Context, sub subtitle) (io.ReadCloser, e
 	return resp.Body, nil
 }
 
-func (a *Addic7ed) seriesIds() (map[string]string, error) {
+func (a *Addic7ed) seriesIds() (seriesIds, error) {
 	resp, err := a.c.Get(baseURL + "/shows.php")
 	if err != nil {
 		return nil, err
@@ -227,7 +219,7 @@ func (a *Addic7ed) seriesIds() (map[string]string, error) {
 		return nil, err
 	}
 
-	showIds := make(map[string]string)
+	showIds := make(seriesIds)
 	q.Find(`td.version > h3 > a[href^="/show/"]`).Each(func(i int, s *goquery.Selection) {
 		show := s.Text()
 		show = strings.ToLower(show)
@@ -245,6 +237,19 @@ func (a *Addic7ed) seriesIds() (map[string]string, error) {
 	})
 
 	return showIds, nil
+}
+
+type seriesIds map[string]string
+
+func (s seriesIds) in(titles ...string) string {
+	for _, title := range titles {
+		for k, v := range s {
+			if k == title {
+				return v
+			}
+		}
+	}
+	return ""
 }
 
 type subtitle struct {
