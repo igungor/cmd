@@ -80,6 +80,7 @@ func main() {
 			continue
 		}
 
+		log.Printf("New request: %v\n", msg.Text)
 		go cmd.Run(ctx, bot, msg)
 	}
 }

@@ -1,4 +1,4 @@
-package cd
+package mp4
 
 import (
 	"bytes"

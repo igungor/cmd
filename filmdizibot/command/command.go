@@ -8,6 +8,7 @@ import (
 	"github.com/igungor/cmd/filmdizibot/command/cd"
 	"github.com/igungor/cmd/filmdizibot/command/ls"
 	"github.com/igungor/cmd/filmdizibot/command/magnet"
+	"github.com/igungor/cmd/filmdizibot/command/mp4"
 	"github.com/igungor/cmd/filmdizibot/command/pwd"
 	"github.com/igungor/cmd/filmdizibot/command/sub"
 )
@@ -33,6 +34,7 @@ func init() {
 	register(magnet.New())
 	register(pwd.New())
 	register(sub.New())
+	register(mp4.New())
 }
 
 func register(cmd Command) {
