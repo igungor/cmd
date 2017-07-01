@@ -63,8 +63,8 @@ func main() {
 		bot.SendMessage(groupWhatsup, txt, md)
 	})
 
-	addr := net.JoinHostPort(*flagHost, *flagPort)
 	go func() {
+		addr := net.JoinHostPort(*flagHost, *flagPort)
 		log.Fatal(http.ListenAndServe(addr, mux))
 	}()
 
