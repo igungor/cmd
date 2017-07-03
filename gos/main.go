@@ -51,13 +51,21 @@ func main() {
 		log.Fatal("no result found")
 	}
 
-	for _, result := range r.Results[:*flagCount] {
+	n := min(*flagCount, len(r.Results))
+	for _, result := range r.Results[:n] {
 		fmt.Printf("\n\033[1m%v\033[m\n", result.Path)
 		syn := result.Synopsis
 		if syn != "" {
 			fmt.Printf("  %v\n", syn)
 		}
 	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 type result struct {
