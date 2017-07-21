@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/igungor/cmd/filmdizibot/bot"
+	"github.com/igungor/go-putio/putio"
 )
 
 type CD struct{}
@@ -30,47 +31,61 @@ func (c *CD) Match(msg string) bool {
 	return strings.HasPrefix(msg, "cd")
 }
 
+func chooseFolder(parent int64, children []putio.File, args ...string) int64 {
+	const (
+		rootFolder        int64 = 0
+		nonexistingFolder int64 = -1
+	)
+
+	// go to root
+	if len(args) == 0 {
+		return rootFolder
+	}
+
+	// go to parent dir
+	dirname := strings.Join(args, " ")
+	if dirname == ".." {
+		return parent
+	}
+
+	// lookup for foldername
+	for _, f := range children {
+		if !f.IsDir() {
+			continue
+		}
+
+		if f.Name == dirname {
+			return f.ID
+		}
+	}
+
+	// lookup for indices that we generate
+	idx, err := strconv.ParseInt(dirname, 10, 64)
+	if err != nil || idx <= 0 {
+		return nonexistingFolder
+	}
+
+	if len(children) < int(idx) {
+		return nonexistingFolder
+	}
+
+	// idx starts from 1
+	return children[idx-1].ID
+}
+
 func (c *CD) Run(ctx context.Context, b *bot.Bot, msg *bot.Message) {
 	chat := msg.Chat.ID
 	args := msg.Args()
-	dirname := strings.Join(args, " ")
-	children := b.Children()
-	var cwd int64
-	if len(args) == 0 { // go to home
-		cwd = 0
-	} else if dirname == ".." { // parent
-		cwd = b.CWD().ParentID
-	} else if len(dirname) == 2 { // indice based navigation
-		idx, err := strconv.ParseInt(dirname, 10, 64)
-		if err != nil || idx <= 0 {
-			cwd = -1
-		} else {
-			if len(children) < int(idx) {
-				cwd = -1
-			} else {
-				cwd = children[idx-1].ID
-			}
-		}
-	} else {
-		cwd = -1
-		for _, f := range children {
-			if !f.IsDir() {
-				continue
-			}
-			if f.Name == dirname {
-				cwd = f.ID
-				break
-			}
-		}
-	}
-	if cwd == -1 {
-		b.SendMessage(chat, fmt.Sprintf("%q klasorunu bulamadim", dirname))
+
+	folderId := chooseFolder(b.CWD().ParentID, b.Children(), args...)
+	if folderId == -1 {
+		b.SendMessage(chat, fmt.Sprintf("%q klasorunu bulamadim", folderId))
 		return
 	}
 
-	children, parent, err := b.ListFiles(ctx, cwd)
+	children, parent, err := b.ListFiles(ctx, folderId)
 	if err != nil {
-		log.Printf("Error listing files for [%v] %q: %v\n", cwd, dirname, err)
+		log.Printf("Error listing files for [%v] %q: %v\n", b.CWD(), folderId, err)
 		b.SendMessage(chat, fmt.Sprintf("error listing files: %v", err))
 		return
 	}
