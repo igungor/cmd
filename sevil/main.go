@@ -71,7 +71,6 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	_, fname := filepath.Split(p)
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename='%v'", fname))
 	http.ServeFile(w, r, p)
-	return
 }
 
 func download(yt string) (string, error) {
