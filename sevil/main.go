@@ -171,7 +171,7 @@ const indexHtml = `
 
     <body>
         <form class="form-group" method="POST">
-            <div class="row top-buffer">
+            <div class="top-buffer">
                 <div class="col-lg-offset-4 col-lg-4">
                     <div class="input-group">
                         <input id="urlInput" type="text" class="form-control" name="urlInput">
