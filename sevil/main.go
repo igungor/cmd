@@ -174,8 +174,8 @@ const indexHtml = `
                 <div class="col-lg-offset-4 col-lg-4">
                     <div class="input-group">
                         <input id="urlInput" type="text" class="form-control" name="urlInput">
-                        <span class="input-group-btn">
-                            <button id="submitBtn" class="btn btn-primary" type="submit">indir</button>
+                        <span class="input-group-btn input-lg">
+                            <button id="submitBtn" class="btn btn-primary btn-lg" type="submit">indir</button>
                         </span>
                     </div>
                 </div>
