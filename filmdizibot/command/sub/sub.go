@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/igungor/cmd/filmdizibot/bot"
 	"github.com/igungor/cmd/filmdizibot/command/sub/provider"
@@ -68,19 +67,22 @@ func (s *Sub) Run(ctx context.Context, b *bot.Bot, msg *bot.Message) {
 	}
 
 	sub := subs[0]
-	title := fmt.Sprintf("%v S%02dE%02d", sub.Title, sub.Season, sub.Episode)
-	var buf bytes.Buffer
-	tw := tabwriter.NewWriter(&buf, 4, 4, 1, ' ', tabwriter.Debug)
-	tw.Write([]byte(fmt.Sprintf("Subtitles for %q\n", title)))
-	tw.Write([]byte("IDX | EP | Title | Lang | Release\n"))
-	for i, sub := range subs {
-		line := fmt.Sprintf("%02d %v\n", i+1, sub)
-		tw.Write([]byte(line))
-	}
-	tw.Flush()
+	title := fmt.Sprintf("Subtitles for '%v S%02dE%02d'", sub.Title, sub.Season, sub.Episode)
+	separator := strings.Repeat("-", len(title))
+	header := "idx | ep | title | lang | release"
 
-	md := telegram.WithParseMode(telegram.ModeMarkdown)
-	b.SendMessage(chat, buf.String(), md)
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "```\n")
+	fmt.Fprintln(&buf, title)
+	fmt.Fprintln(&buf, separator)
+	fmt.Fprintln(&buf, header)
+	fmt.Fprintf(&buf, "```\n")
+	for i, sub := range subs {
+		fmt.Fprintf(&buf, "%02d %v\n", i+1, sub)
+	}
+
+	withMarkdown := telegram.WithParseMode(telegram.ModeMarkdown)
+	b.SendMessage(chat, buf.String(), withMarkdown)
 }
 
 func (s *Sub) handleSelect(ctx context.Context, b *bot.Bot, msg *bot.Message, args []string) ([]*provider.Subtitle, error) {
