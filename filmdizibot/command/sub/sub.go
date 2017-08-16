@@ -68,7 +68,7 @@ func (s *Sub) Run(ctx context.Context, b *bot.Bot, msg *bot.Message) {
 	}
 
 	sub := subs[0]
-	title := fmt.Sprintf("%v S%2dE%2d", sub.Title, sub.Season, sub.Episode)
+	title := fmt.Sprintf("%v S%02dE%02d", sub.Title, sub.Season, sub.Episode)
 	var buf bytes.Buffer
 	tw := tabwriter.NewWriter(&buf, 4, 4, 1, ' ', tabwriter.Debug)
 	tw.Write([]byte(fmt.Sprintf("Subtitles for %q\n", title)))
