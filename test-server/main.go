@@ -12,7 +12,7 @@ import (
 func main() {
 	var (
 		flagDumpRequest = flag.Bool("d", false, "dump full request to stdout")
-		flagLogRequest  = flag.Bool("l", true, "dump request path to stdout")
+		flagLogRequest  = flag.Bool("l", false, "dump request path to stdout")
 		flagPort        = flag.Uint("p", 0, "port to listen to")
 	)
 	flag.Parse()
