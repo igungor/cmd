@@ -1,4 +1,4 @@
-// akillyu kills the given process after a given -t timeout.
+// akilyu kills the given process after a given -t timeout.
 package main
 
 import (
