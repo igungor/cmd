@@ -1,8 +1,9 @@
-// akilyu kills the given process after a given -t timeout.
+// akilyu sends a SIGINT to given process after a given -t timeout.
 package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -36,4 +37,9 @@ func main() {
 	if err := p.Signal(os.Interrupt); err != nil {
 		log.Fatalf("Could not send SIGINT to process %v: %v", p.Pid, err)
 	}
+}
+
+func usage() {
+	fmt.Fprintf(os.Stderr, "Usage: akilyu PID\n")
+	flag.PrintDefaults()
 }
