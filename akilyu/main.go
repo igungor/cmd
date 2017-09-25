@@ -7,12 +7,15 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
+	"syscall"
 	"time"
 )
 
 func main() {
 	var (
 		flagTimeout = flag.Duration("t", 0, "timeout")
+		flagSignal  = flag.String("s", "sigint", "the signal to be sent")
 	)
 	flag.Usage = usage
 	flag.Parse()
@@ -35,9 +38,30 @@ func main() {
 
 	<-time.After(*flagTimeout)
 
-	if err := p.Signal(os.Interrupt); err != nil {
+	if err := p.Signal(signal(*flagSignal)); err != nil {
 		log.Fatalf("Could not send SIGINT to process %v: %v", p.Pid, err)
 	}
+}
+
+func signal(sig string) os.Signal {
+	sig = strings.ToLower(sig)
+	if strings.HasPrefix(sig, "sig") {
+		sig = strings.TrimPrefix(sig, "sig")
+	}
+
+	switch sig {
+	case "int":
+		return os.Interrupt
+	case "hup":
+		return syscall.SIGHUP
+	case "kill":
+		return syscall.SIGKILL
+	case "usr1":
+		return syscall.SIGUSR1
+	case "usr2":
+		return syscall.SIGUSR2
+	}
+	return os.Interrupt
 }
 
 func usage() {
