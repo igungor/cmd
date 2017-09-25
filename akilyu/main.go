@@ -14,6 +14,7 @@ func main() {
 	var (
 		flagTimeout = flag.Duration("t", 0, "timeout")
 	)
+	flag.Usage = usage
 	flag.Parse()
 	log.SetFlags(0)
 
