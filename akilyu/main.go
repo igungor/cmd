@@ -65,6 +65,7 @@ func signal(sig string) os.Signal {
 }
 
 func usage() {
+	fmt.Fprintf(os.Stderr, "akilyu sends the specified signal to the given process after a certain amount of time\n\n")
 	fmt.Fprintf(os.Stderr, "Usage: akilyu PID\n")
 	flag.PrintDefaults()
 }
