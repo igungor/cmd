@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"os"
 	"strconv"
 	"sync"
 )
@@ -18,11 +19,14 @@ func main() {
 		flagPort         = flag.Uint("p", 0, "port to listen to")
 	)
 	flag.Parse()
+
+	logger := log.New(os.Stdout, "", log.LstdFlags)
+
 	ln, err := net.Listen("tcp", net.JoinHostPort("0.0.0.0", strconv.Itoa(int(*flagPort))))
 	if err != nil {
-		log.Fatalf("Could not listen to the port: %v", err)
+		logger.Fatalf("Could not listen to the port: %v", err)
 	}
-	log.Printf("Running on %v\n", ln.Addr())
+	logger.Printf("Running on %v\n", ln.Addr())
 
 	var (
 		mu      sync.Mutex
@@ -30,19 +34,19 @@ func main() {
 	)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if *flagLogRequest {
-			log.Printf("%v\n", r.URL)
+			logger.Printf("%v\n", r.URL)
 		}
 		if *flagDumpRequest {
 			b, _ := httputil.DumpRequest(r, true)
-			log.Println(string(b))
+			logger.Println(string(b))
 		}
 
 		if *flagCountRequest {
 			mu.Lock()
 			counter++
 			mu.Unlock()
-			log.Printf("counter: %d\n", counter)
+			logger.Printf("counter: %d\n", counter)
 		}
 	})
-	log.Fatal(http.Serve(ln, nil))
+	logger.Fatal(http.Serve(ln, nil))
 }
