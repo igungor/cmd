@@ -1,4 +1,3 @@
-// akilyu sends a SIGINT to given process after a given -t timeout.
 package main
 
 import (
@@ -17,7 +16,11 @@ func main() {
 		flagTimeout = flag.Duration("t", 0, "timeout")
 		flagSignal  = flag.String("s", "sigint", "the signal to be sent")
 	)
-	flag.Usage = usage
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "akilyu sends the specified signal to the given process after a certain amount of time\n\n")
+		fmt.Fprintf(os.Stderr, "Usage: akilyu PID\n")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 	log.SetFlags(0)
 
@@ -62,10 +65,4 @@ func signal(sig string) os.Signal {
 		return syscall.SIGUSR2
 	}
 	return os.Interrupt
-}
-
-func usage() {
-	fmt.Fprintf(os.Stderr, "akilyu sends the specified signal to the given process after a certain amount of time\n\n")
-	fmt.Fprintf(os.Stderr, "Usage: akilyu PID\n")
-	flag.PrintDefaults()
 }
