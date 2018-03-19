@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -18,14 +17,17 @@ import (
 )
 
 func main() {
+	var (
+		flagAddr = flag.String("addr", ":1987", "Address to listen (host:port)")
+	)
+	flag.Parse()
+
 	log.SetFlags(0)
 	log.SetPrefix("sevil: ")
 
-	var (
-		flagHost = flag.String("host", "0.0.0.0", "host")
-		flagPort = flag.String("port", "1987", "port")
-	)
-	flag.Parse()
+	if *flagAddr == "" {
+		log.Fatal("'-addr' must be specified")
+	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -41,7 +43,7 @@ func main() {
 		}
 	})
 
-	log.Fatal(http.ListenAndServe(net.JoinHostPort(*flagHost, *flagPort), nil))
+	log.Fatal(http.ListenAndServe(*flagAddr, nil))
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
