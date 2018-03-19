@@ -7,24 +7,30 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 
 	humanize "github.com/dustin/go-humanize"
 	"github.com/gorilla/schema"
 	"github.com/igungor/cmd/filmdizibot/bot"
 	"github.com/igungor/cmd/filmdizibot/command"
+	"github.com/igungor/cmd/filmdizibot/config"
 	"github.com/igungor/telegram"
 )
 
 const groupWhatsup = -230439016
 
 func main() {
-	log.SetFlags(0)
-	log.SetPrefix("filmdizibot: ")
 	var (
-		flagHost = flag.String("h", "0.0.0.0", "host to listen to")
-		flagPort = flag.String("p", "1989", "port to listen to")
+		flagConfig = flag.String("c", "filmdizibot.toml", "Path to configuration file")
 	)
 	flag.Parse()
+
+	log.SetFlags(0)
+	log.SetPrefix("filmdizibot: ")
+
+	if err := config.Load(*flagConfig); err != nil {
+		log.Fatalf("could not load configuration: %v", err)
+	}
 
 	ctx := context.Background()
 	bot, err := bot.New(ctx)
@@ -64,7 +70,7 @@ func main() {
 	})
 
 	go func() {
-		addr := net.JoinHostPort(*flagHost, *flagPort)
+		addr := net.JoinHostPort(config.Config.Host, strconv.Itoa(config.Config.Port))
 		log.Fatal(http.ListenAndServe(addr, mux))
 	}()
 

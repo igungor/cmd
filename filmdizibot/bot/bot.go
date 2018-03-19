@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"sync"
 	"time"
 
 	"golang.org/x/oauth2"
 
 	"github.com/igungor/cmd/filmdizibot/command/sub/provider"
+	"github.com/igungor/cmd/filmdizibot/config"
 	"github.com/igungor/go-putio/putio"
 	"github.com/igungor/telegram"
 )
@@ -40,21 +40,11 @@ type Bot struct {
 }
 
 func New(ctx context.Context) (*Bot, error) {
-	// config
 	var (
-		telegramToken = os.Getenv("FILMDIZIBOT_TELEGRAM_TOKEN")
-		putioToken    = os.Getenv("FILMDIZIBOT_PUTIO_TOKEN")
-		webhook       = os.Getenv("FILMDIZIBOT_WEBHOOK")
+		putioToken      = config.Config.Putio.Token
+		telegramToken   = config.Config.Telegram.Token
+		telegramWebhook = config.Config.Telegram.Webhook
 	)
-
-	if telegramToken == "" {
-		return nil, fmt.Errorf("FILMDIZIBOT_TELEGRAM_TOKEN is not set.")
-	}
-
-	if putioToken == "" {
-		return nil, fmt.Errorf("FILMDIZIBOT_PUTIO_TOKEN is not set.")
-	}
-
 	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: putioToken})
 	oc := oauth2.NewClient(ctx, tokenSource)
 	oc.Timeout = 10 * time.Second
@@ -70,7 +60,7 @@ func New(ctx context.Context) (*Bot, error) {
 		cwd:      cwd,
 		children: children,
 	}
-	err = bot.SetWebhook(webhook)
+	err = bot.SetWebhook(telegramWebhook)
 	if err != nil {
 		return nil, fmt.Errorf("Error setting webhook: %v", err)
 	}

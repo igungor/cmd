@@ -1,0 +1,13 @@
+host = ""
+port = 1989
+
+[telegram]
+token = ""
+webhook = ""
+
+[putio]
+token = ""
+
+[addic7ed]
+username = ""
+password = ""

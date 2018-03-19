@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -30,10 +29,7 @@ type Addic7ed struct {
 	isAvail  bool
 }
 
-func NewAddic7ed() *Addic7ed {
-	username := os.Getenv("FILMDIZIBOT_ADDIC7ED_USERNAME")
-	password := os.Getenv("FILMDIZIBOT_ADDIC7ED_PASSWORD")
-
+func NewAddic7ed(username, password string) *Addic7ed {
 	c := &http.Client{
 		// disable redirect
 		CheckRedirect: func(r *http.Request, via []*http.Request) error {

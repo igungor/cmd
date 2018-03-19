@@ -10,6 +10,7 @@ import (
 
 	"github.com/igungor/cmd/filmdizibot/bot"
 	"github.com/igungor/cmd/filmdizibot/command/sub/provider"
+	"github.com/igungor/cmd/filmdizibot/config"
 	"github.com/igungor/telegram"
 )
 
@@ -20,7 +21,10 @@ type Sub struct {
 func New() *Sub {
 	return &Sub{
 		providers: []provider.Provider{
-			provider.NewAddic7ed(),
+			provider.NewAddic7ed(
+				config.Config.Addic7ed.Username,
+				config.Config.Addic7ed.Password,
+			),
 		},
 	}
 }
