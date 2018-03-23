@@ -13,7 +13,7 @@ import (
 
 func main() {
 	var (
-		flagTimeout = flag.Duration("t", 0, "timeout")
+		flagTimeout = flag.Duration("t", 0, "Timeout (in Go duration format)")
 		flagSignal  = flag.String("s", "sigint", "the signal to be sent")
 	)
 	flag.Usage = func() {
