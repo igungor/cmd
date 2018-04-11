@@ -38,8 +38,6 @@ func main() {
 		log.Fatalf("Error creating the bot: %v\n", err)
 	}
 
-	md := telegram.WithParseMode(telegram.ModeMarkdown)
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", bot.Handler())
 	mux.HandleFunc("/cb", func(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +63,7 @@ func main() {
 			return
 		}
 
+		md := telegram.WithParseMode(telegram.ModeMarkdown)
 		txt := fmt.Sprintf("🗣 New file downloaded!\n\n*%v*\n\nSize: %v", t.Name, humanize.Bytes(uint64(t.Size)))
 		bot.SendMessage(groupWhatsup, txt, md)
 	})
