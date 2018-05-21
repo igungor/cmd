@@ -63,6 +63,14 @@ func main() {
 			return
 		}
 
+		// TODO(ig):
+		// cleanup the new transfer:
+		// 1. extract archives if any
+		// 2. remove .nfo, .idx, .txt, *sample.mp4, etc garbage files.
+		// 3. search for Subs folder and move subtitles to the parent dir
+		{
+		}
+
 		md := telegram.WithParseMode(telegram.ModeMarkdown)
 		txt := fmt.Sprintf("🗣 New file downloaded!\n\n*%v*\n\nSize: %v", t.Name, humanize.Bytes(uint64(t.Size)))
 		bot.SendMessage(groupWhatsup, txt, md)
