@@ -11,6 +11,9 @@ import (
 )
 
 func main() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "usage: urlparse <url>\n")
+	}
 	flag.Parse()
 	if flag.NArg() != 1 {
 		flag.Usage()
