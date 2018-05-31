@@ -17,7 +17,8 @@ func main() {
 	if flag.NArg() == 0 {
 		s := bufio.NewScanner(os.Stdin)
 		for s.Scan() {
-			fmt.Println(s.Text())
+			line := s.Text()
+			fmt.Println(humanize(line))
 		}
 		if err := s.Err(); err != nil {
 			log.Fatal(err)
