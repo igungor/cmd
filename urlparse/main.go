@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"text/tabwriter"
 )
 
 func main() {
@@ -46,9 +47,11 @@ func pprint(u *url.URL) {
 	}
 	sort.Strings(keys)
 
+	w := tabwriter.NewWriter(&buf, 0, 2, 2, ' ', 0)
 	for _, key := range keys {
-		fmt.Fprintf(&buf, "  %v: %v\n", key, u.Query().Get(key))
+		fmt.Fprintf(w, "  %v:\t%v\n", key, u.Query().Get(key))
 	}
+	w.Flush()
 	fmt.Fprintf(&buf, "Fragment: %v\n", u.Fragment)
 
 	fmt.Println(buf.String())
