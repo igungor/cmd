@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/url"
 	"os"
 	"sort"
+	"strings"
 	"text/tabwriter"
 )
 
@@ -16,14 +18,16 @@ func main() {
 		fmt.Fprintf(os.Stderr, "usage: urlparse <url>\n")
 	}
 	flag.Parse()
-	if flag.NArg() != 1 {
-		flag.Usage()
-		os.Exit(1)
+
+	var r io.Reader = os.Stdin
+	if arg := flag.Arg(0); arg != "" {
+		r = strings.NewReader(arg)
 	}
 
-	urlstr := flag.Arg(0)
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
 
-	u, err := url.Parse(urlstr)
+	u, err := url.Parse(buf.String())
 	if err != nil {
 		log.Fatal(err)
 	}
