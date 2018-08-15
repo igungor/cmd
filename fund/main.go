@@ -178,7 +178,7 @@ func printBitbar(funds ...Fund) string {
 
 	var buf bytes.Buffer
 
-	format := "%v %v (%v%%) | color=%v href=https://www.akportfoy.com.tr/tr/fund/%v\n"
+	format := "%v %v (%v%%) | color=%v href=http://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=%v\n"
 
 	for _, f := range funds {
 		fmt.Fprintf(&buf, format, f.Code, f.Price, f.Daily, color(f.Daily), f.Code)
