@@ -22,22 +22,12 @@ func main() {
 		flagBitbar = flag.Bool("bitbar", false, "Enable bitbar compatible output")
 	)
 	flag.Parse()
-	if flag.NArg() == 0 {
-		funds, err := GetFunds()
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Print(prettyPrint(*flagBitbar, funds...))
-		return
-	}
 
-	code := flag.Arg(0)
-	fund, err := GetFund(code)
+	funds, err := GetFunds(flag.Args()...)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Print(prettyPrint(*flagBitbar, fund))
-
+	fmt.Print(prettyPrint(*flagBitbar, funds...))
 }
 
 func GetFund(code string) (Fund, error) {
@@ -106,6 +96,19 @@ func GetFunds(codes ...string) ([]Fund, error) {
 		name := sel.Find("th").Text()
 		name = strings.TrimPrefix(name, code)
 		name = strings.TrimSpace(name)
+
+		if len(codes) != 0 {
+			var found bool
+			for _, c := range codes {
+				if strings.ToLower(c) == strings.ToLower(code) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return
+			}
+		}
 
 		fund := Fund{
 			Code: code,
@@ -183,9 +186,11 @@ func printBitbar(funds ...Fund) string {
 	for _, f := range funds {
 		fmt.Fprintf(&buf, format, f.Code, f.Price, f.Daily, color(f.Daily), f.Code)
 		fmt.Fprintf(&buf, "----\n")
-		fmt.Fprintf(&buf, "-- weekly:  %v%% | color=%v\n", f.Weekly, color(f.Weekly))
-		fmt.Fprintf(&buf, "-- monthly: %v%% | color=%v\n", f.Monthly, color(f.Monthly))
-		fmt.Fprintf(&buf, "-- annual:  %v%% | color=%v\n", f.Annual, color(f.Annual))
+		fmt.Fprintf(&buf, "-- %v | color=black\n", f.Name)
+		fmt.Fprintf(&buf, "-----\n")
+		fmt.Fprintf(&buf, "-- Weekly:  %v%% | color=%v\n", f.Weekly, color(f.Weekly))
+		fmt.Fprintf(&buf, "-- Monthly: %v%% | color=%v\n", f.Monthly, color(f.Monthly))
+		fmt.Fprintf(&buf, "-- Annual:  %v%% | color=%v\n", f.Annual, color(f.Annual))
 	}
 	return buf.String()
 }
