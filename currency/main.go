@@ -8,17 +8,12 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"text/tabwriter"
 	"time"
 )
 
 const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
 
 func main() {
-	var (
-		flagBitbar = flag.Bool("bitbar", false, "Enable bitbar compatible output")
-	)
-	_ = flagBitbar
 	flag.Parse()
 
 	currencies, err := GetCurrencies(flag.Args()...)
@@ -26,7 +21,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(prettyPrint(*flagBitbar, currencies...))
+	fmt.Println(prettyPrint(currencies...))
 }
 
 func GetCurrencies(codes ...string) ([]Currency, error) {
@@ -74,51 +69,34 @@ type Currency struct {
 	Code       string  `json:"code"`
 }
 
-func prettyPrint(bitbar bool, currencies ...Currency) string {
-	if bitbar {
-		return printBitbar(currencies...)
-	}
-
-	return printLong(currencies...)
-}
-
-func printBitbar(currencies ...Currency) string {
+func prettyPrint(currencies ...Currency) string {
+	const (
+		boldblack = "\x1b[30m"
+		black     = "\x1b[1;30m"
+		red       = "\x1b[35m"
+		green     = "\x1b[32m"
+		reset     = "\x1b[0m"
+	)
 	color := func(f float64) string {
 		switch {
-		case f == 0:
-			return "grey"
 		case f < 0:
 			return "red"
 		case f > 0:
 			return "green"
+		default:
+			return "black"
 		}
-		return "black"
 	}
 
 	var buf bytes.Buffer
 
-	format := "\x1b[30;1;8m%v\x1b[0m | ansi=true size=13 href=href=https://tr.investing.com/currencies/%v-try-commentary\n"
-
 	for _, c := range currencies {
-		fmt.Fprintf(&buf, format, strings.ToUpper(c.Code), strings.ToLower(c.Code))
-		fmt.Fprintf(&buf, "• Fiyat:  %v | color=%v size=11\n", c.Selling, "black")
-		fmt.Fprintf(&buf, "• Günlük:  %.2f%% | color=%v size=11\n", c.ChangeRate, color(c.ChangeRate))
+		code := strings.ToUpper(c.Code)
+
+		fmt.Fprintf(&buf, "%v <%.1f%%> | size=13 color=%v href=href=https://tr.investing.com/currencies/%v-try-commentary\n", code, c.ChangeRate, color(c.ChangeRate), code)
+		fmt.Fprintf(&buf, "• Sell: %.4f | size=11 color=black\n", c.Selling)
+		fmt.Fprintf(&buf, "• Buy: %.4f | size=11 color=black\n", c.Buying)
 		fmt.Fprintf(&buf, "---\n")
 	}
-	return buf.String()
-}
-
-func printLong(currencies ...Currency) string {
-	var buf bytes.Buffer
-	w := tabwriter.NewWriter(&buf, 0, 2, 2, ' ', 0)
-
-	format := "%v\t%.4f\t%.1f\n"
-
-	fmt.Fprintf(w, "currency\tprice\tdaily\n")
-	for _, c := range currencies {
-		fmt.Fprintf(w, format, c.Code, c.Selling, c.ChangeRate)
-	}
-	w.Flush()
-
 	return buf.String()
 }
