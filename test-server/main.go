@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 )
 
 func main() {
@@ -17,6 +18,7 @@ func main() {
 		flagLogRequest   = flag.Bool("l", false, "dump request path to stdout")
 		flagCountRequest = flag.Bool("c", false, "count requests")
 		flagPort         = flag.Uint("p", 0, "port to listen to")
+		flagDelay        = flag.Duration("t", 0, "delay the response")
 	)
 	flag.Parse()
 
@@ -33,6 +35,9 @@ func main() {
 		counter int64
 	)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if flagDelay.Nanoseconds() > 0 {
+			time.Sleep(*flagDelay)
+		}
 		if *flagLogRequest {
 			logger.Printf("%v\n", r.URL)
 		}
