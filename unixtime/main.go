@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"log"
@@ -12,19 +13,17 @@ import (
 func main() {
 	flag.Parse()
 	flag.Usage = usage
-	if flag.NArg() != 1 {
-		flag.Usage()
-		os.Exit(2)
-	}
 
-	arg := flag.Arg(0)
-	unixtime, err := strconv.ParseInt(arg, 10, 64)
-	if err != nil {
-		log.Fatal(err)
+	s := bufio.NewScanner(os.Stdin)
+	for s.Scan() {
+		line := s.Text()
+		unixtime, err := strconv.ParseInt(line, 10, 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+		t := time.Unix(unixtime, 0)
+		fmt.Println(t)
 	}
-	t := time.Unix(unixtime, 0)
-
-	fmt.Println(t)
 }
 
 func usage() {
