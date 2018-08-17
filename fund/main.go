@@ -30,22 +30,6 @@ func main() {
 	fmt.Print(prettyPrint(*flagBitbar, funds...))
 }
 
-func GetFund(code string) (Fund, error) {
-	code = strings.ToUpper(code)
-
-	funds, err := GetFunds()
-	if err != nil {
-		return Fund{}, err
-	}
-
-	for _, fund := range funds {
-		if fund.Code == code {
-			return fund, nil
-		}
-	}
-	return Fund{}, fmt.Errorf("fund not found")
-}
-
 func GetFunds(codes ...string) ([]Fund, error) {
 	const (
 		baseurl    = "http://www.akportfoy.com.tr/ajax/getfundreturns?fundsubtypeId=%v&enddate=%v&lang=tr"
@@ -173,24 +157,33 @@ func prettyPrint(bitbar bool, funds ...Fund) string {
 
 func printBitbar(funds ...Fund) string {
 	color := func(f float64) string {
-		if f < 0 {
+		switch {
+		case f == 0:
+			return "grey"
+		case f < 0:
 			return "red"
+		case f > 0:
+			return "green"
 		}
-		return "green"
+		return "black"
 	}
 
 	var buf bytes.Buffer
 
-	format := "%v %v (%v%%) | color=%v href=http://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=%v\n"
+	format := "\x1b[30;1;8m%v (%v)\x1b[0m | ansi=true size=13 href=http://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=%v\n"
 
 	for _, f := range funds {
-		fmt.Fprintf(&buf, format, f.Code, f.Price, f.Daily, color(f.Daily), f.Code)
-		fmt.Fprintf(&buf, "----\n")
-		fmt.Fprintf(&buf, "-- %v | color=black\n", f.Name)
-		fmt.Fprintf(&buf, "-----\n")
-		fmt.Fprintf(&buf, "-- Weekly:  %v%% | color=%v\n", f.Weekly, color(f.Weekly))
-		fmt.Fprintf(&buf, "-- Monthly: %v%% | color=%v\n", f.Monthly, color(f.Monthly))
-		fmt.Fprintf(&buf, "-- Annual:  %v%% | color=%v\n", f.Annual, color(f.Annual))
+		name := strings.TrimPrefix(f.Name, "Ak Portföy ")
+		name = strings.TrimSuffix(name, "Yabancı Hisse Senedi Fonu")
+		name = strings.TrimSpace(name)
+
+		fmt.Fprintf(&buf, format, f.Code, name, f.Code)
+		fmt.Fprintf(&buf, "• Fiyat:  %v | color=%v size=11\n", f.Price, "black")
+		fmt.Fprintf(&buf, "• Günlük:  %v%% | color=%v size=11\n", f.Daily, color(f.Daily))
+		fmt.Fprintf(&buf, "• Haftalık:  %v%% | color=%v size=11\n", f.Weekly, color(f.Weekly))
+		fmt.Fprintf(&buf, "• Aylık: %v%% | color=%v size=11\n", f.Monthly, color(f.Monthly))
+		fmt.Fprintf(&buf, "• Yıllık:  %v%% | color=%v size=11\n", f.Annual, color(f.Annual))
+		fmt.Fprintf(&buf, "---\n")
 	}
 	return buf.String()
 }
