@@ -1,15 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net/url"
 	"os"
 	"sort"
-	"strings"
 	"text/tabwriter"
 )
 
@@ -19,20 +18,16 @@ func main() {
 	}
 	flag.Parse()
 
-	var r io.Reader = os.Stdin
-	if arg := flag.Arg(0); arg != "" {
-		r = strings.NewReader(arg)
+	s := bufio.NewScanner(os.Stdin)
+	for s.Scan() {
+		line := s.Text()
+		u, err := url.Parse(line)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprint(u)
 	}
 
-	var buf bytes.Buffer
-	io.Copy(&buf, r)
-
-	u, err := url.Parse(buf.String())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	pprint(u)
 }
 
 func pprint(u *url.URL) {
