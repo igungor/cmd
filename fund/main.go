@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -18,16 +17,13 @@ import (
 const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
 
 func main() {
-	var (
-		flagBitbar = flag.Bool("bitbar", false, "Enable bitbar compatible output")
-	)
 	flag.Parse()
 
 	funds, err := GetFunds(flag.Args()...)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Print(prettyPrint(*flagBitbar, funds...))
+	fmt.Print(prettyPrint(funds...))
 }
 
 func GetFunds(codes ...string) ([]Fund, error) {
@@ -147,15 +143,7 @@ const (
 	DovizSerbest            FundType = 71
 )
 
-func prettyPrint(bitbar bool, funds ...Fund) string {
-	if bitbar {
-		return printBitbar(funds...)
-	}
-
-	return printLong(funds...)
-}
-
-func printBitbar(funds ...Fund) string {
+func prettyPrint(funds ...Fund) string {
 	color := func(f float64) string {
 		switch {
 		case f == 0:
@@ -170,7 +158,7 @@ func printBitbar(funds ...Fund) string {
 
 	var buf bytes.Buffer
 
-	format := "\x1b[30;1;8m%v (%v)\x1b[0m | ansi=true size=13 href=http://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=%v\n"
+	format := "\x1b[30;1;8m%v (%v)\x1b[0m | size=13 href=http://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=%v\n"
 
 	for _, f := range funds {
 		name := strings.TrimPrefix(f.Name, "Ak Portföy ")
@@ -185,20 +173,5 @@ func printBitbar(funds ...Fund) string {
 		fmt.Fprintf(&buf, "• Yıllık:  %v%% | color=%v size=11\n", f.Annual, color(f.Annual))
 		fmt.Fprintf(&buf, "---\n")
 	}
-	return buf.String()
-}
-
-func printLong(funds ...Fund) string {
-	var buf bytes.Buffer
-	w := tabwriter.NewWriter(&buf, 0, 2, 2, ' ', 0)
-
-	format := "%v\t%v\t%v\t%v\t%v\t%v\t%v\n"
-
-	fmt.Fprintf(w, format, "code", "name", "price", "daily", "weekly", "monthly", "annual")
-	for _, f := range funds {
-		fmt.Fprintf(w, format, f.Code, f.Name, f.Price, f.Daily, f.Weekly, f.Monthly, f.Annual)
-	}
-	w.Flush()
-
 	return buf.String()
 }
