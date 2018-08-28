@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	userAgent  = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
-	timeLayout = "02/01/2006"
+	userAgent   = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
+	timeLayout  = "02/01/2006"
+	storagePath = ".local/share"
 )
 
 func main() {
@@ -163,7 +164,7 @@ func prettyPrint(funds ...Fund) string {
 
 	var buf bytes.Buffer
 
-	header := "%v (%v) \x1b[31;1;8m %v\x1b[0m | size=13 href=http://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=%v\n"
+	header := "%v (%v) \x1b[31;1;8m%v\x1b[0m | size=13 href=http://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=%v\n"
 
 	for _, f := range funds {
 		sethop(f.Code, time.Now(), f.Daily)
@@ -172,8 +173,8 @@ func prettyPrint(funds ...Fund) string {
 		hop := gethop(f.Code)
 		var freefall string
 		for _, h := range hop {
-			if h.DailyChange < 0 {
-				freefall += "• "
+			if h.DailyChange >= 0 {
+				freefall += "◉ "
 			} else {
 				freefall = ""
 			}
@@ -196,7 +197,7 @@ func prettyPrint(funds ...Fund) string {
 
 func sethop(code string, date time.Time, change float64) {
 	home := os.Getenv("HOME")
-	path := filepath.Join(home, ".local/share/")
+	path := filepath.Join(home, storagePath)
 	os.MkdirAll(path, 0755)
 	fpath := filepath.Join(path, "funds.json")
 
@@ -239,7 +240,7 @@ func sethop(code string, date time.Time, change float64) {
 
 func gethops() map[string][]Hop {
 	home := os.Getenv("HOME")
-	path := filepath.Join(home, ".local/share/")
+	path := filepath.Join(home, storagePath)
 	os.MkdirAll(path, 0755)
 	fpath := filepath.Join(path, "funds.json")
 
