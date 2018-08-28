@@ -5,13 +5,20 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
-const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
+const (
+	userAgent   = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
+	timeLayout  = "02/01/2006"
+	storagePath = ".local/share"
+)
 
 func main() {
 	flag.Parse()
@@ -93,10 +100,91 @@ func prettyPrint(currencies ...Currency) string {
 	for _, c := range currencies {
 		code := strings.ToUpper(c.Code)
 
-		fmt.Fprintf(&buf, "%v <%.1f%%> | size=13 color=%v href=href=https://tr.investing.com/currencies/%v-try-commentary\n", code, c.ChangeRate, color(c.ChangeRate), code)
+		sethop(code, time.Now(), c.ChangeRate)
+
+		// calculate the fall
+		hop := gethop(code)
+		var freefall string
+		for _, h := range hop {
+			if h.DailyChange < 0 {
+				freefall += "◉ "
+			} else {
+				freefall = ""
+			}
+		}
+
+		fmt.Fprintf(&buf, "%v <%.1f%%> \x1b[31;1;8m%v\x1b[0m | size=13 color=%v href=href=https://tr.investing.com/currencies/%v-try-commentary\n", code, c.ChangeRate, freefall, color(c.ChangeRate), code)
 		fmt.Fprintf(&buf, "• Sell: %.4f | size=11 color=black\n", c.Selling)
 		fmt.Fprintf(&buf, "• Buy: %.4f | size=11 color=black\n", c.Buying)
 		fmt.Fprintf(&buf, "---\n")
 	}
 	return buf.String()
+}
+
+func sethop(code string, date time.Time, change float64) {
+	home := os.Getenv("HOME")
+	path := filepath.Join(home, storagePath)
+	os.MkdirAll(path, 0755)
+	fpath := filepath.Join(path, "currency.json")
+
+	_, err := os.Stat(fpath)
+	if os.IsNotExist(err) {
+		ioutil.WriteFile(fpath, []byte("{}"), 0644)
+	}
+
+	allhops := gethops()
+
+	datestr := date.Format(timeLayout)
+	hop := Hop{Date: datestr, DailyChange: change}
+
+	hops, ok := allhops[code]
+	if !ok {
+		hops = []Hop{hop}
+	} else {
+		var found bool
+		for _, h := range hops {
+			if h.Date == datestr {
+				found = true
+				break
+			}
+		}
+		if !found {
+			hops = append(hops, hop)
+		}
+	}
+
+	// limit the size of the slice to 3
+	if len(hops) >= 3 {
+		hops = hops[len(hops)-3 : len(hops)]
+	}
+
+	allhops[code] = hops
+
+	b, _ := json.Marshal(allhops)
+	_ = ioutil.WriteFile(fpath, b, 0644)
+}
+
+func gethops() map[string][]Hop {
+	home := os.Getenv("HOME")
+	path := filepath.Join(home, storagePath)
+	os.MkdirAll(path, 0755)
+	fpath := filepath.Join(path, "currency.json")
+
+	m := make(map[string][]Hop)
+
+	content, _ := ioutil.ReadFile(fpath)
+	_ = json.Unmarshal(content, &m)
+
+	return m
+}
+
+func gethop(code string) []Hop {
+	all := gethops()
+	v, _ := all[code]
+	return v
+}
+
+type Hop struct {
+	Date        string
+	DailyChange float64
 }
