@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -14,7 +17,10 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
+const (
+	userAgent  = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
+	timeLayout = "02/01/2006"
+)
 
 func main() {
 	flag.Parse()
@@ -28,14 +34,13 @@ func main() {
 
 func GetFunds(codes ...string) ([]Fund, error) {
 	const (
-		baseurl    = "http://www.akportfoy.com.tr/ajax/getfundreturns?fundsubtypeId=%v&enddate=%v&lang=tr"
-		timelayout = "02/01/2006"
+		baseurl = "http://www.akportfoy.com.tr/ajax/getfundreturns?fundsubtypeId=%v&enddate=%v&lang=tr"
 	)
 
 	c := &http.Client{Timeout: time.Minute}
 
 	const fund = YabanciHisseSenedi
-	today := time.Now().Format(timelayout)
+	today := time.Now().Format(timeLayout)
 
 	u := fmt.Sprintf(baseurl, fund, today)
 	req, _ := http.NewRequest("POST", u, nil)
@@ -158,14 +163,27 @@ func prettyPrint(funds ...Fund) string {
 
 	var buf bytes.Buffer
 
-	format := "\x1b[30;1;8m%v (%v)\x1b[0m | size=13 href=http://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=%v\n"
+	header := "%v (%v) \x1b[31;1;8m %v\x1b[0m | size=13 href=http://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=%v\n"
 
 	for _, f := range funds {
+		sethop(f.Code, time.Now(), f.Daily)
+
+		// calculate the fall
+		hop := gethop(f.Code)
+		var freefall string
+		for _, h := range hop {
+			if h.DailyChange < 0 {
+				freefall += "• "
+			} else {
+				freefall = ""
+			}
+		}
+
 		name := strings.TrimPrefix(f.Name, "Ak Portföy ")
 		name = strings.TrimSuffix(name, "Yabancı Hisse Senedi Fonu")
 		name = strings.TrimSpace(name)
 
-		fmt.Fprintf(&buf, format, f.Code, name, f.Code)
+		fmt.Fprintf(&buf, header, f.Code, name, freefall, f.Code)
 		fmt.Fprintf(&buf, "• Fiyat:  %v | color=%v size=11\n", f.Price, "black")
 		fmt.Fprintf(&buf, "• Günlük:  %v%% | color=%v size=11\n", f.Daily, color(f.Daily))
 		fmt.Fprintf(&buf, "• Haftalık:  %v%% | color=%v size=11\n", f.Weekly, color(f.Weekly))
@@ -174,4 +192,72 @@ func prettyPrint(funds ...Fund) string {
 		fmt.Fprintf(&buf, "---\n")
 	}
 	return buf.String()
+}
+
+func sethop(code string, date time.Time, change float64) {
+	home := os.Getenv("HOME")
+	path := filepath.Join(home, ".local/share/")
+	os.MkdirAll(path, 0755)
+	fpath := filepath.Join(path, "funds.json")
+
+	_, err := os.Stat(fpath)
+	if os.IsNotExist(err) {
+		ioutil.WriteFile(fpath, []byte("{}"), 0644)
+	}
+
+	allhops := gethops()
+
+	datestr := date.Format(timeLayout)
+	hop := Hop{Date: datestr, DailyChange: change}
+
+	hops, ok := allhops[code]
+	if !ok {
+		hops = []Hop{hop}
+	} else {
+		var found bool
+		for _, h := range hops {
+			if h.Date == datestr {
+				found = true
+				break
+			}
+		}
+		if !found {
+			hops = append(hops, hop)
+		}
+	}
+
+	// limit the size of the slice to 3
+	if len(hops) >= 3 {
+		hops = hops[len(hops)-3 : len(hops)]
+	}
+
+	allhops[code] = hops
+
+	b, _ := json.Marshal(allhops)
+	_ = ioutil.WriteFile(fpath, b, 0644)
+}
+
+func gethops() map[string][]Hop {
+	home := os.Getenv("HOME")
+	path := filepath.Join(home, ".local/share/")
+	os.MkdirAll(path, 0755)
+	fpath := filepath.Join(path, "funds.json")
+
+	m := make(map[string][]Hop)
+
+	content, _ := ioutil.ReadFile(fpath)
+	_ = json.Unmarshal(content, &m)
+
+	return m
+}
+
+func gethop(code string) []Hop {
+	all := gethops()
+	v, _ := all[code]
+	return v
+}
+
+type Hop struct {
+	Date        string
+	DailyChange float64
 }
