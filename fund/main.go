@@ -173,7 +173,7 @@ func prettyPrint(funds ...Fund) string {
 		hop := gethop(f.Code)
 		var freefall string
 		for _, h := range hop {
-			if h.DailyChange >= 0 {
+			if h.DailyChange < 0 {
 				freefall += "◉ "
 			} else {
 				freefall = ""
