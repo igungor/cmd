@@ -23,13 +23,22 @@ const (
 	storagePath = ".local/share"
 )
 
+var (
+	ErrDisabled = fmt.Errorf("disabled on weekends")
+)
+
 func main() {
 	flag.Parse()
 
 	funds, err := GetFunds(flag.Args()...)
-	if err != nil {
+	switch err {
+	case ErrDisabled:
+		fmt.Println(err)
+		os.Exit(0)
+	default:
 		log.Fatal(err)
 	}
+
 	fmt.Print(prettyPrint(funds...))
 }
 
@@ -41,9 +50,14 @@ func GetFunds(codes ...string) ([]Fund, error) {
 	c := &http.Client{Timeout: time.Minute}
 
 	const fund = YabanciHisseSenedi
-	today := time.Now().Format(timeLayout)
+	today := time.Now()
 
-	u := fmt.Sprintf(baseurl, fund, today)
+	switch today.Weekday() {
+	case 6, 0: // saturday and sunday
+		return nil, ErrDisabled
+	}
+
+	u := fmt.Sprintf(baseurl, fund, today.Format(timeLayout))
 	req, _ := http.NewRequest("POST", u, nil)
 	req.Header.Set("User-Agent", userAgent)
 
@@ -57,8 +71,8 @@ func GetFunds(codes ...string) ([]Fund, error) {
 		Title string
 		Table string
 	}
-	err = json.NewDecoder(resp.Body).Decode(&response)
-	if err != nil {
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
