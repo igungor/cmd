@@ -113,7 +113,7 @@ func prettyPrint(currencies ...Currency) string {
 			}
 		}
 
-		fmt.Fprintf(&buf, "%v <%.1f%%> \x1b[31;1;8m%v\x1b[0m | size=13 color=%v href=href=https://tr.investing.com/currencies/%v-try-commentary\n", code, c.ChangeRate, freefall, color(c.ChangeRate), code)
+		fmt.Fprintf(&buf, "%v <%.2f%%> \x1b[31;1;8m%v\x1b[0m | size=13 color=%v href=https://tr.investing.com/currencies/%v-try-commentary\n", code, c.ChangeRate, freefall, color(c.ChangeRate), strings.ToLower(code))
 		fmt.Fprintf(&buf, "• Sell: %.4f | size=11 color=black\n", c.Selling)
 		fmt.Fprintf(&buf, "• Buy: %.4f | size=11 color=black\n", c.Buying)
 		fmt.Fprintf(&buf, "---\n")
