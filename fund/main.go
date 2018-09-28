@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -31,12 +31,9 @@ func main() {
 	flag.Parse()
 
 	funds, err := GetFunds(flag.Args()...)
-	switch err {
-	case ErrDisabled:
+	if err == ErrDisabled {
 		fmt.Println(err)
 		os.Exit(0)
-	default:
-		log.Fatal(err)
 	}
 
 	fmt.Print(prettyPrint(funds...))
@@ -49,7 +46,6 @@ func GetFunds(codes ...string) ([]Fund, error) {
 
 	c := &http.Client{Timeout: time.Minute}
 
-	const fund = YabanciHisseSenedi
 	today := time.Now()
 
 	switch today.Weekday() {
@@ -57,6 +53,7 @@ func GetFunds(codes ...string) ([]Fund, error) {
 		return nil, ErrDisabled
 	}
 
+	const fund = YabanciHisseSenedi
 	u := fmt.Sprintf(baseurl, fund, today.Format(timeLayout))
 	req, _ := http.NewRequest("POST", u, nil)
 	req.Header.Set("User-Agent", userAgent)
@@ -131,6 +128,7 @@ func GetFunds(codes ...string) ([]Fund, error) {
 		})
 
 		funds = append(funds, fund)
+
 	})
 
 	return funds, nil
@@ -210,6 +208,10 @@ func prettyPrint(funds ...Fund) string {
 }
 
 func sethop(code string, date time.Time, change float64) {
+	// change is not reflected on the site yet, hence the zero value.
+	if change == 0 {
+		return
+	}
 	home := os.Getenv("HOME")
 	path := filepath.Join(home, storagePath)
 	os.MkdirAll(path, 0755)
