@@ -36,11 +36,21 @@ func GetCurrencies(codes ...string) ([]Currency, error) {
 
 	const baseurl = "https://www.doviz.com/api/v1/currencies/all/latest"
 
-	resp, err := c.Get(baseurl)
+	req, err := http.NewRequest("GET", baseurl, nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not create request: %v", err)
+	}
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
+
+	resp, err := c.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch currencies: %v", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("unexpected HTTP status code: %v", resp.StatusCode)
+	}
 
 	var currencies []Currency
 	if err := json.NewDecoder(resp.Body).Decode(&currencies); err != nil {
@@ -114,8 +124,8 @@ func prettyPrint(currencies ...Currency) string {
 		}
 
 		fmt.Fprintf(&buf, "%v <%.2f%%> \x1b[31;1;8m%v\x1b[0m | size=13 color=%v href=https://tr.investing.com/currencies/%v-try-commentary\n", code, c.ChangeRate, freefall, color(c.ChangeRate), strings.ToLower(code))
-		fmt.Fprintf(&buf, "• Sell: %.4f | size=11 color=black\n", c.Selling)
-		fmt.Fprintf(&buf, "• Buy: %.4f | size=11 color=black\n", c.Buying)
+		fmt.Fprintf(&buf, "• Al: %.4f | size=11 color=black\n", c.Buying)
+		fmt.Fprintf(&buf, "• Sat: %.4f | size=11 color=black\n", c.Selling)
 		fmt.Fprintf(&buf, "---\n")
 	}
 	return buf.String()

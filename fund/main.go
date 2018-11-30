@@ -175,7 +175,7 @@ func prettyPrint(funds ...Fund) string {
 
 	var buf bytes.Buffer
 
-	header := "%v (%v) \x1b[31;1;8m%v\x1b[0m | size=13 href=http://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=%v\n"
+	header := "%v (%v) \x1b[31;1;8m%v\x1b[0m | size=13 href=https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=%v\n"
 
 	for _, f := range funds {
 		sethop(f.Code, time.Now(), f.Daily)
