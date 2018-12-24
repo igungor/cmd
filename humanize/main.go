@@ -13,26 +13,24 @@ import (
 
 func main() {
 	var (
-		flagComma = flag.Bool("c", false, "")
+		flagComma = flag.Bool("c", false, "Use commas after every 3 orders")
 	)
 	flag.Parse()
 
-	if flag.NArg() == 0 {
-		s := bufio.NewScanner(os.Stdin)
-		for s.Scan() {
-			line := s.Text()
-			fmt.Println(humanize(line, *flagComma))
-		}
-		if err := s.Err(); err != nil {
-			log.Fatal(err)
+	if flag.NArg() != 0 {
+		for _, arg := range flag.Args() {
+			fmt.Println(humanize(arg, *flagComma))
 		}
 		return
 	}
 
-	for _, arg := range flag.Args() {
-		fmt.Println(humanize(arg, *flagComma))
+	s := bufio.NewScanner(os.Stdin)
+	for s.Scan() {
+		fmt.Println(humanize(s.Text(), *flagComma))
 	}
-
+	if err := s.Err(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func humanize(s string, comma bool) string {
