@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -38,6 +39,12 @@ func main() {
 	fmt.Print(prettyPrint(funds...))
 }
 
+var code2fundtype = map[string]FundType{
+	"AFA": YabanciHisseSenedi,
+	"AFT": YabanciHisseSenedi,
+	"AK2": BorclanmaAraclari,
+}
+
 func GetFunds(codes ...string) ([]Fund, error) {
 	const (
 		baseurl = "http://www.akportfoy.com.tr/ajax/getfundreturns?fundsubtypeId=%v&enddate=%v&lang=tr"
@@ -52,83 +59,86 @@ func GetFunds(codes ...string) ([]Fund, error) {
 		return nil, ErrDisabled
 	}
 
-	const fund = YabanciHisseSenedi
-	u := fmt.Sprintf(baseurl, fund, today.Format(timeLayout))
-	req, _ := http.NewRequest("POST", u, nil)
-	req.Header.Set("User-Agent", userAgent)
-
-	resp, err := c.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	var response struct {
-		Title string
-		Table string
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, err
-	}
-
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(response.Table))
-	if err != nil {
-		return nil, err
-	}
-
 	atof := func(s string) float64 {
 		f, _ := strconv.ParseFloat(s, 64)
 		return f
 	}
 
 	var funds []Fund
-	doc.Find("tr").Each(func(i int, sel *goquery.Selection) {
-		if i == 0 {
-			return
+	for _, code := range codes {
+		fund, ok := code2fundtype[code]
+		if !ok {
+			log.Printf("undefined fund for given code %q", code)
+			continue
+		}
+		u := fmt.Sprintf(baseurl, fund, today.Format(timeLayout))
+
+		req, _ := http.NewRequest("POST", u, nil)
+		req.Header.Set("User-Agent", userAgent)
+
+		resp, err := c.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			log.Printf("unexpected status code: %v", resp.StatusCode)
+			continue
 		}
 
-		code := sel.Find(".fundcode").Text()
-		name := sel.Find("th").Text()
-		name = strings.TrimPrefix(name, code)
-		name = strings.TrimSpace(name)
+		var response struct {
+			Title string
+			Table string
+		}
 
-		if len(codes) != 0 {
-			var found bool
-			for _, c := range codes {
-				if strings.ToLower(c) == strings.ToLower(code) {
-					found = true
-					break
-				}
-			}
-			if !found {
+		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			return nil, err
+		}
+
+		doc, err := goquery.NewDocumentFromReader(strings.NewReader(response.Table))
+		if err != nil {
+			return nil, err
+		}
+
+		doc.Find("tr").Each(func(i int, sel *goquery.Selection) {
+			if i == 0 {
 				return
 			}
-		}
 
-		fund := Fund{
-			Code: code,
-			Name: name,
-		}
+			codeInDoc := sel.Find(".fundcode").Text()
+			name := sel.Find("th").Text()
+			name = strings.TrimPrefix(name, code)
+			name = strings.TrimSpace(name)
 
-		sel.Children().Each(func(n int, sel *goquery.Selection) {
-			switch n {
-			case 1:
-				fund.Price = atof(sel.Text())
-			case 2:
-				fund.Daily = atof(sel.Text())
-			case 3:
-				fund.Weekly = atof(sel.Text())
-			case 4:
-				fund.Monthly = atof(sel.Text())
-			case 5:
-				fund.Annual = atof(sel.Text())
+			if !strings.EqualFold(codeInDoc, code) {
+				return
 			}
+
+			fund := Fund{
+				Code: code,
+				Name: name,
+			}
+
+			sel.Children().Each(func(n int, sel *goquery.Selection) {
+				switch n {
+				case 1:
+					fund.Price = atof(sel.Text())
+				case 2:
+					fund.Daily = atof(sel.Text())
+				case 3:
+					fund.Weekly = atof(sel.Text())
+				case 4:
+					fund.Monthly = atof(sel.Text())
+				case 5:
+					fund.Annual = atof(sel.Text())
+				}
+			})
+
+			funds = append(funds, fund)
+
 		})
-
-		funds = append(funds, fund)
-
-	})
+	}
 
 	return funds, nil
 }
@@ -193,6 +203,7 @@ func prettyPrint(funds ...Fund) string {
 
 		name := strings.TrimPrefix(f.Name, "Ak Portföy ")
 		name = strings.TrimSuffix(name, "Yabancı Hisse Senedi Fonu")
+		name = strings.TrimSuffix(name, "Araçları Fonu")
 		name = strings.TrimSpace(name)
 
 		fmt.Fprintf(&buf, header, f.Code, name, freefall, f.Code)
