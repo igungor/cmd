@@ -8,6 +8,7 @@ require (
 	github.com/dlclark/regexp2 v1.1.6 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/dustin/go-humanize v1.0.0
+	github.com/godexsoft/gofeed v1.0.0-beta6
 	github.com/gorilla/schema v1.1.0
 	github.com/headzoo/surf v1.0.0
 	github.com/headzoo/ut v0.0.0-20181013193318-a13b5a7a02ca // indirect
