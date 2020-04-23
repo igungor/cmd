@@ -14,16 +14,23 @@ func main() {
 	flag.Parse()
 	flag.Usage = usage
 
+	if flag.NArg() > 0 {
+		fmt.Println(unixtime(flag.Arg(0)))
+		return
+	}
+
 	s := bufio.NewScanner(os.Stdin)
 	for s.Scan() {
-		line := s.Text()
-		unixtime, err := strconv.ParseInt(line, 10, 64)
-		if err != nil {
-			log.Fatal(err)
-		}
-		t := time.Unix(unixtime, 0)
-		fmt.Println(t)
+		fmt.Println(unixtime(s.Text()))
 	}
+}
+
+func unixtime(s string) time.Time {
+	t, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return time.Unix(t, 0)
 }
 
 func usage() {

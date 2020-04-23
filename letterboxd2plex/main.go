@@ -3,13 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
+
+	"github.com/rs/zerolog"
 )
+
+var logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).With().Timestamp().Logger()
 
 func main() {
 	if err := realMain(); err != nil {
-		log.Println(err)
+		logger.Error().Msg(err.Error())
 		os.Exit(1)
 	}
 }
@@ -18,8 +21,12 @@ func realMain() error {
 	var (
 		flagPlexAddr  = flag.String("plex.addr", "", "Plex server address (host:port)")
 		flagPlexToken = flag.String("plex.token", "", "Plex API token")
+		flagLogLevel  = flag.String("log", "info", "Log level (debug, info, error)")
 	)
 	flag.Parse()
+
+	logLevel, _ := zerolog.ParseLevel(*flagLogLevel)
+	logger = logger.Level(logLevel)
 
 	if *flagPlexAddr == "" {
 		return fmt.Errorf("Plex address must be provided")
@@ -57,11 +64,12 @@ func realMain() error {
 	for _, movie := range letterboxdList.Movies {
 		ratingKey, ok := plexMovies[movie]
 		if !ok {
-			log.Printf("Letterboxd movie %q is not found in Plex library", movie)
+			logger.Debug().Str("movie", movie).Msg("Letterboxd movie not found in Plex library")
+			// log.Printf("Letterboxd movie %q is not found in Plex library", movie)
 			continue
 		}
 
-		log.Printf("Found %q in Plex library", movie)
+		logger.Debug().Str("movie", movie).Msg("found in Plex library")
 		keys = append(keys, ratingKey)
 	}
 
