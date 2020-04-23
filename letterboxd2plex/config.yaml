@@ -1,0 +1,9 @@
+plex:
+  addr: http://192.168.1.185
+  token: <your-token>
+
+lists:
+  - https://letterboxd.com/visdave34/list/official-top-250-narrative-feature-films/
+  - https://letterboxd.com/andredenervaux/list/youre-not-the-same-person-once-the-film-has/
+  - https://letterboxd.com/visdave34/list/imdb-top-250/
+  - https://letterboxd.com/deathproof/list/quietly-brilliant/

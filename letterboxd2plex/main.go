@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -18,29 +17,15 @@ func main() {
 }
 
 func realMain() error {
-	var (
-		flagPlexAddr  = flag.String("plex.addr", "", "Plex server address (host:port)")
-		flagPlexToken = flag.String("plex.token", "", "Plex API token")
-		flagLogLevel  = flag.String("log", "info", "Log level (debug, info, error)")
-	)
+	flagConfig := flag.String("c", "config.yaml", "Configuration file path")
 	flag.Parse()
 
-	logLevel, _ := zerolog.ParseLevel(*flagLogLevel)
-	logger = logger.Level(logLevel)
-
-	if *flagPlexAddr == "" {
-		return fmt.Errorf("Plex address must be provided")
+	cfg, err := decodeConfig(*flagConfig)
+	if err != nil {
+		return err
 	}
 
-	if *flagPlexToken == "" {
-		return fmt.Errorf("Plex API token must be provided")
-	}
-
-	if flag.NArg() != 1 {
-		return fmt.Errorf("Letterboxd list URL must be provided")
-	}
-
-	plexc, err := New(*flagPlexAddr, *flagPlexToken, nil)
+	plexc, err := New(cfg.Plex.Addr, cfg.Plex.Token, nil)
 	if err != nil {
 		return err
 	}
@@ -55,34 +40,41 @@ func realMain() error {
 		plexMovies[metadata.Title] = metadata.RatingKey
 	}
 
-	letterboxdList, err := FetchMovieList(flag.Arg(0))
-	if err != nil {
-		return err
-	}
+	logLevel, _ := zerolog.ParseLevel(cfg.LogLevel)
+	logger = logger.Level(logLevel)
 
-	var keys []string
-	for _, movie := range letterboxdList.Movies {
-		ratingKey, ok := plexMovies[movie]
-		if !ok {
-			logger.Debug().Str("movie", movie).Msg("Letterboxd movie not found in Plex library")
-			// log.Printf("Letterboxd movie %q is not found in Plex library", movie)
-			continue
-		}
-
-		logger.Debug().Str("movie", movie).Msg("found in Plex library")
-		keys = append(keys, ratingKey)
-	}
-
-	for _, key := range keys {
-		if err := plexc.AddToCollection(letterboxdList.Title, moviesSection, key); err != nil {
+	for _, link := range cfg.Lists {
+		letterboxdList, err := FetchMovieList(link)
+		if err != nil {
 			return err
 		}
+
+		var keys []string
+		for _, movie := range letterboxdList.Movies {
+			ratingKey, ok := plexMovies[movie]
+			if !ok {
+				logger.Debug().Str("movie", movie).Msg("Letterboxd movie not found in Plex library")
+				continue
+			}
+
+			logger.Debug().Str("movie", movie).Msg("found in Plex library")
+			keys = append(keys, ratingKey)
+		}
+
+		listTitle := letterboxdList.Title
+		for _, key := range keys {
+			if err := plexc.AddToCollection(listTitle, moviesSection, key); err != nil {
+				return err
+			}
+		}
+
+		collection, err := plexc.CollectionByTitle(listTitle)
+		if err != nil {
+			return err
+		}
+
+		return plexc.UpdateCollectionSummary(collection.RatingKey, letterboxdList.Summary)
 	}
 
-	collection, err := plexc.CollectionByTitle(letterboxdList.Title)
-	if err != nil {
-		return err
-	}
-
-	return plexc.UpdateCollectionSummary(collection.RatingKey, letterboxdList.Summary)
+	return nil
 }
