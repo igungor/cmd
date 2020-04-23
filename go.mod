@@ -1,5 +1,7 @@
 module github.com/igungor/cmd
 
+go 1.14
+
 require (
 	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/anacrolix/torrent v1.2.0
