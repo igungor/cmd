@@ -95,6 +95,25 @@ func (c *Client) AddToCollection(collection, section, key string) error {
 	return nil
 }
 
+func (c *Client) RemoveFromCollection(collection, section, key string) error {
+	params := make(url.Values)
+	params.Add("type", moviesSection)
+	params.Add("id", key)
+	params.Add("collection[].tag.tag-", collection)
+	params.Add("collection.locked", "1")
+
+	url := fmt.Sprintf("/library/sections/%v/all?%v", section, params.Encode())
+	req := c.newRequest("PUT", url, nil)
+
+	resp, err := c.do(req, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
 func (c *Client) UpdateCollectionSummary(collectionKey, summary string) error {
 	params := make(url.Values)
 	params.Add("type", collectionSection)
