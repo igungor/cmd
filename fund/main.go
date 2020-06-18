@@ -40,15 +40,14 @@ func main() {
 }
 
 var code2fundtype = map[string]FundType{
-	"AFA": YabanciHisseSenedi,
-	"AFT": YabanciHisseSenedi,
-	"AK2": BorclanmaAraclari,
+	"AFA": ForeignEquityFunds,
+	"AFT": ForeignEquityFunds,
+	"AK2": FixedIncomeFunds,
+	"AES": CommodityFunds,
 }
 
 func GetFunds(codes ...string) ([]Fund, error) {
-	const (
-		baseurl = "http://www.akportfoy.com.tr/ajax/getfundreturns?fundsubtypeId=%v&enddate=%v&lang=tr"
-	)
+	const baseurl = "http://www.akportfoy.com.tr/ajax/getfundreturns?fundsubtypeId=%v&enddate=%v&lang=tr"
 
 	c := &http.Client{Timeout: time.Minute}
 
@@ -66,6 +65,7 @@ func GetFunds(codes ...string) ([]Fund, error) {
 
 	var funds []Fund
 	for _, code := range codes {
+		code = strings.ToUpper(code)
 		fund, ok := code2fundtype[code]
 		if !ok {
 			log.Printf("undefined fund for given code %q", code)
@@ -157,17 +157,9 @@ type Fund struct {
 type FundType uint8
 
 const (
-	ParaPiyasasi            FundType = 5
-	BorclanmaAraclari       FundType = 6
-	Katilim                 FundType = 4
-	Degisken                FundType = 2
-	HisseSenedi             FundType = 1
-	YabanciHisseSenedi      FundType = 7
-	DegerliMaden            FundType = 3
-	FonSepeti               FundType = 9
-	GayrimenkulYatirim      FundType = 32
-	GirisimSermayesiYatirim FundType = 30
-	DovizSerbest            FundType = 71
+	CommodityFunds     FundType = 3
+	FixedIncomeFunds   FundType = 6
+	ForeignEquityFunds FundType = 111
 )
 
 func prettyPrint(funds ...Fund) string {
@@ -255,7 +247,7 @@ func sethop(code string, date time.Time, change float64) {
 
 	// limit the size of the slice to 3
 	if len(hops) >= 3 {
-		hops = hops[len(hops)-3 : len(hops)]
+		hops = hops[len(hops)-3:]
 	}
 
 	allhops[code] = hops
@@ -279,9 +271,7 @@ func gethops() map[string][]Hop {
 }
 
 func gethop(code string) []Hop {
-	all := gethops()
-	v, _ := all[code]
-	return v
+	return gethops()[code]
 }
 
 type Hop struct {
