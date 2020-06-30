@@ -39,15 +39,8 @@ func main() {
 	fmt.Print(prettyPrint(funds...))
 }
 
-var code2fundtype = map[string]FundType{
-	"AFA": ForeignEquityFunds,
-	"AFT": ForeignEquityFunds,
-	"AK2": FixedIncomeFunds,
-	"AES": CommodityFunds,
-}
-
 func GetFunds(codes ...string) ([]Fund, error) {
-	const baseurl = "http://www.akportfoy.com.tr/ajax/getfundreturns?fundsubtypeId=%v&enddate=%v&lang=tr"
+	const baseurl = "https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=%v"
 
 	c := &http.Client{Timeout: time.Minute}
 
@@ -58,22 +51,13 @@ func GetFunds(codes ...string) ([]Fund, error) {
 		return nil, ErrDisabled
 	}
 
-	atof := func(s string) float64 {
-		f, _ := strconv.ParseFloat(s, 64)
-		return f
-	}
-
 	var funds []Fund
 	for _, code := range codes {
 		code = strings.ToUpper(code)
-		fund, ok := code2fundtype[code]
-		if !ok {
-			log.Printf("undefined fund for given code %q", code)
-			continue
-		}
-		u := fmt.Sprintf(baseurl, fund, today.Format(timeLayout))
 
-		req, _ := http.NewRequest("POST", u, nil)
+		u := fmt.Sprintf(baseurl, code)
+
+		req, _ := http.NewRequest("GET", u, nil)
 		req.Header.Set("User-Agent", userAgent)
 
 		resp, err := c.Do(req)
@@ -87,71 +71,51 @@ func GetFunds(codes ...string) ([]Fund, error) {
 			continue
 		}
 
-		var response struct {
-			Title string
-			Table string
-		}
-
-		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			return nil, err
-		}
-
-		doc, err := goquery.NewDocumentFromReader(strings.NewReader(response.Table))
+		doc, err := goquery.NewDocumentFromReader(resp.Body)
 		if err != nil {
 			return nil, err
 		}
 
-		doc.Find("tr").Each(func(i int, sel *goquery.Selection) {
-			if i == 0 {
-				return
+		fundName := strings.TrimSpace(doc.Find(".main-indicators h2").Text())
+		fund := Fund{
+			Code: code,
+			Name: fundName,
+		}
+
+		fund.Price = atof(doc.Find(".top-list > li:nth-child(1) span").Text())
+		fund.Daily = atof(doc.Find(".top-list > li:nth-child(2) span").Text())
+
+		doc.Find(".price-indicators li span").Each(func(i int, sel *goquery.Selection) {
+			changePercent := atof(sel.Text())
+
+			switch i {
+			case 0:
+				fund.Monthly = changePercent
+			case 1:
+				fund.Quarterly = changePercent
+			case 2:
+				fund.Biannual = changePercent
+			case 3:
+				fund.Annual = changePercent
 			}
-
-			codeInDoc := sel.Find(".fundcode").Text()
-			name := sel.Find("th").Text()
-			name = strings.TrimPrefix(name, code)
-			name = strings.TrimSpace(name)
-
-			if !strings.EqualFold(codeInDoc, code) {
-				return
-			}
-
-			fund := Fund{
-				Code: code,
-				Name: name,
-			}
-
-			sel.Children().Each(func(n int, sel *goquery.Selection) {
-				switch n {
-				case 1:
-					fund.Price = atof(sel.Text())
-				case 2:
-					fund.Daily = atof(sel.Text())
-				case 3:
-					fund.Weekly = atof(sel.Text())
-				case 4:
-					fund.Monthly = atof(sel.Text())
-				case 5:
-					fund.Annual = atof(sel.Text())
-				}
-			})
-
-			funds = append(funds, fund)
 
 		})
+		funds = append(funds, fund)
 	}
 
 	return funds, nil
 }
 
 type Fund struct {
-	Type    FundType
-	Code    string
-	Name    string
-	Price   float64
-	Daily   float64
-	Weekly  float64
-	Monthly float64
-	Annual  float64
+	Type      FundType
+	Code      string
+	Name      string
+	Price     float64
+	Daily     float64
+	Monthly   float64
+	Quarterly float64
+	Biannual  float64
+	Annual    float64
 }
 
 type FundType uint8
@@ -193,16 +157,12 @@ func prettyPrint(funds ...Fund) string {
 			}
 		}
 
-		name := strings.TrimPrefix(f.Name, "Ak Portföy ")
-		name = strings.TrimSuffix(name, "Yabancı Hisse Senedi Fonu")
-		name = strings.TrimSuffix(name, "Araçları Fonu")
-		name = strings.TrimSpace(name)
-
-		fmt.Fprintf(&buf, header, f.Code, name, freefall, f.Code)
-		fmt.Fprintf(&buf, "• Fiyat:  %v | color=%v size=11\n", f.Price, "black")
+		fmt.Fprintf(&buf, header, f.Code, f.Name, freefall, f.Code)
+		fmt.Fprintf(&buf, "• Fiyat:  %v | color=%v size=11\n", f.Price, "white")
 		fmt.Fprintf(&buf, "• Günlük:  %v%% | color=%v size=11\n", f.Daily, color(f.Daily))
-		fmt.Fprintf(&buf, "• Haftalık:  %v%% | color=%v size=11\n", f.Weekly, color(f.Weekly))
 		fmt.Fprintf(&buf, "• Aylık: %v%% | color=%v size=11\n", f.Monthly, color(f.Monthly))
+		fmt.Fprintf(&buf, "• 3 Aylık: %v%% | color=%v size=11\n", f.Quarterly, color(f.Quarterly))
+		fmt.Fprintf(&buf, "• 6 Aylık: %v%% | color=%v size=11\n", f.Biannual, color(f.Biannual))
 		fmt.Fprintf(&buf, "• Yıllık:  %v%% | color=%v size=11\n", f.Annual, color(f.Annual))
 		fmt.Fprintf(&buf, "---\n")
 	}
@@ -277,4 +237,11 @@ func gethop(code string) []Hop {
 type Hop struct {
 	Date        string
 	DailyChange float64
+}
+
+func atof(s string) float64 {
+	s = strings.TrimPrefix(s, "%")
+	s = strings.ReplaceAll(s, ",", ".")
+	f, _ := strconv.ParseFloat(s, 64)
+	return f
 }
