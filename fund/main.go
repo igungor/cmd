@@ -158,7 +158,7 @@ func prettyPrint(funds ...Fund) string {
 		}
 
 		fmt.Fprintf(&buf, header, f.Code, f.Name, freefall, f.Code)
-		fmt.Fprintf(&buf, "• Fiyat:  %v | color=%v size=11\n", f.Price, "white")
+		fmt.Fprintf(&buf, "• Fiyat:  %v | size=11\n", f.Price)
 		fmt.Fprintf(&buf, "• Günlük:  %v%% | color=%v size=11\n", f.Daily, color(f.Daily))
 		fmt.Fprintf(&buf, "• Aylık: %v%% | color=%v size=11\n", f.Monthly, color(f.Monthly))
 		fmt.Fprintf(&buf, "• 3 Aylık: %v%% | color=%v size=11\n", f.Quarterly, color(f.Quarterly))
