@@ -143,6 +143,9 @@ func prettyPrint(funds ...Fund) string {
 
 	header := "%v (%v) \x1b[31;1;8m%v\x1b[0m | size=13 href=https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=%v\n"
 
+	fmt.Fprintln(&buf, "Refresh | refresh=true")
+	fmt.Fprintf(&buf, "---\n")
+
 	for _, f := range funds {
 		sethop(f.Code, time.Now(), f.Daily)
 
