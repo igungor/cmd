@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -17,14 +16,15 @@ func main() {
 		flagDumpRequest  = flag.Bool("d", false, "dump full request to stdout")
 		flagLogRequest   = flag.Bool("l", false, "dump request path to stdout")
 		flagCountRequest = flag.Bool("c", false, "count requests")
-		flagPort         = flag.Uint("p", 0, "port to listen to")
+		flagAddr         = flag.String("p", ":8080", "address to listen to")
 		flagDelay        = flag.Duration("t", 0, "delay the response")
+		flagResponse     = flag.String("w", "", "response")
 	)
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.LstdFlags)
 
-	ln, err := net.Listen("tcp", net.JoinHostPort("0.0.0.0", strconv.Itoa(int(*flagPort))))
+	ln, err := net.Listen("tcp", *flagAddr)
 	if err != nil {
 		logger.Fatalf("Could not listen to the port: %v", err)
 	}
@@ -52,6 +52,8 @@ func main() {
 			mu.Unlock()
 			logger.Printf("counter: %d\n", counter)
 		}
+
+		w.Write([]byte(*flagResponse))
 	})
 	logger.Fatal(http.Serve(ln, nil))
 }
