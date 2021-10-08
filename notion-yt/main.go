@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -30,6 +31,8 @@ func realmain() error {
 		flagConfig = flag.String("c", "config.toml", "TOML configuration path")
 	)
 	flag.Parse()
+
+	logger := log.New(os.Stdout, "", 0)
 
 	bytes, err := ioutil.ReadFile(*flagConfig)
 	if err != nil {
@@ -88,6 +91,8 @@ func realmain() error {
 				},
 			},
 		}
+
+		logger.Printf("Updating %q...", r.Code)
 		_, err := c.UpdatePageProps(ctx, pageID, params)
 		if err != nil {
 			return err
@@ -114,6 +119,8 @@ func realmain() error {
 				},
 			},
 		}
+
+		logger.Printf("Updating %q...", code)
 		_, err = c.UpdatePageProps(ctx, pageID, params)
 		if err != nil {
 			return err
