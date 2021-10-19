@@ -174,7 +174,7 @@ func prettyPrint(funds ...Fund) string {
 
 func sethop(code string, date time.Time, change float64) {
 	// change is not reflected on the site yet, hence the zero value.
-	if change == 0 {
+	if change == 0 || change == -100 {
 		return
 	}
 	home := os.Getenv("HOME")
