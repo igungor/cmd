@@ -43,6 +43,7 @@ func GetFunds(ctx context.Context, codes ...string) ([]Fund, error) {
 		req, _ := http.NewRequest("GET", u, nil)
 		req = req.WithContext(ctx)
 		req.Header.Set("User-Agent", userAgent)
+		req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 
 		resp, err := c.Do(req)
 		if err != nil {
