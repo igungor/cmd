@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const (
+	yahooFinanceURL = "https://query1.finance.yahoo.com/v8/finance/chart/"
+)
+
 func main() {
 	if err := realmain(); err != nil {
 		fmt.Println(err)
