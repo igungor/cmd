@@ -28,7 +28,7 @@ func main() {
 func unixtime(s string) time.Time {
 	t, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("parse: %v", err)
 	}
 	return time.Unix(t, 0)
 }
