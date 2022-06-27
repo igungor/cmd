@@ -36,8 +36,9 @@ func main() {
 		f.Close()
 
 		dbpath = f.Name()
-		logger.Printf("DB file: %v", f.Name())
 	}
+
+	logger.Printf("DB file: %v", dbpath)
 
 	backend, err := s3bolt.NewFile(dbpath)
 	if err != nil {
