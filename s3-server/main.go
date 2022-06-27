@@ -48,7 +48,7 @@ func main() {
 	ts := httptest.NewServer(faker.Server())
 	defer ts.Close()
 
-	logger.Println(ts.URL)
+	logger.Printf("s5cmd --endpoint-url %v", ts.URL)
 
 	<-ctx.Done()
 }
